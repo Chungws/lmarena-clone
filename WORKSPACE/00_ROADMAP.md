@@ -38,13 +38,12 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 
 **Worker (Data Aggregation):**
 - Python 3.11+
-- APScheduler or cron (hourly jobs)
-- Motor or PyMongo (MongoDB reader)
-- SQLModel (PostgreSQL writer)
+- APScheduler (hourly jobs)
+- databases + asyncpg (PostgreSQL async driver)
 
-**Databases:**
-- PostgreSQL 16 (aggregated data: leaderboards, statistics)
-- MongoDB (log data: battles, responses, votes)
+**Database:**
+- PostgreSQL 16 (single database for all data)
+  - sessions, battles (JSONB), votes, model_stats, worker_status
 
 **AI Inference:**
 - Ollama (local models)
@@ -79,8 +78,16 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
   - All 12 implementation decisions documented
   - Battle MVP: 9 decisions (position randomization, timeout/retry, CORS, logging, etc.)
   - Leaderboard MVP: 5 decisions (worker scheduling, CI calculation, minimum votes, etc.)
-- ⏳ Project structure setup (backend, frontend, worker)
-- ⏳ Docker Compose configuration (PostgreSQL + MongoDB)
+- ✅ **Database Design completed** - **2025-01-21**
+  - PostgreSQL-only architecture finalized (no MongoDB)
+  - Session-based schema: sessions → battles → votes
+  - JSONB conversation storage (OpenAI-compatible)
+  - Foreign Keys NOT used (ADR-001)
+  - Repository pattern for abstraction
+  - 4-phase scalability path defined (10 QPS → 10,000+ QPS)
+  - Complete Alembic migration spec (DATABASE_DESIGN.md)
+- ✅ **Project structure setup (backend, frontend, worker)** - Already defined in uv workspace
+- ⏳ Docker Compose configuration (PostgreSQL only)
 - ⏳ Repository README.md
 
 **Details:** N/A (initialization phase)
@@ -90,27 +97,34 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 ### ⏳ Phase 1: MVP - Battle Mode (Text-to-Text)
 
 **Status:** Not Started
-**Goal:** Enable users to compare two LLM responses in blind side-by-side testing
+**Goal:** Enable users to compare two LLM responses in blind side-by-side testing with session-based conversations
 
 **Key Features:**
 1. **Battle UI (Frontend)**
-   - Chat-like input field for user prompt
+   - Session-based design (multiple battles per session like LM Arena)
+   - Prompt input field for creating session/battle
    - Side-by-side response display (Assistant A vs Assistant B)
+   - Multi-turn conversation support with follow-up messages
    - Model identities hidden until vote
    - Voting buttons: "Left is Better", "Tie", "Both are bad", "Right is Better"
    - Reveal model names after voting
-   - Follow-up prompt support (optional MVP feature)
+   - "New Battle" button to start new battle with different models in same session
 
 2. **Battle API (Backend)**
-   - `POST /api/battles` - Create new battle
+   - `POST /api/sessions` - Create session + first battle
      - Accept user prompt
      - Randomly select 2 models from available pool
      - Call LLM APIs (parallel requests)
-     - Store battle, responses in MongoDB
+     - Store session and battle in PostgreSQL (JSONB conversation)
      - Return anonymous responses (model IDs hidden)
+   - `POST /api/sessions/{session_id}/battles` - New battle in session
+     - Randomly select 2 NEW models
+     - Create new battle in same session
+   - `POST /api/battles/{battle_id}/messages` - Follow-up message
+     - Append to JSONB conversation array
+     - Call LLMs with full conversation history
    - `POST /api/battles/{battle_id}/vote` - Submit vote
-     - Accept vote (left_better, tie, both_bad, right_better)
-     - Store vote in MongoDB
+     - Transaction: INSERT vote (denormalized model_ids) + UPDATE battle status
      - Reveal model identities
    - `GET /api/models` - List available models
 
@@ -119,10 +133,10 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
    - Support OpenAI-compatible API format
    - Environment-based configuration (dev/prod)
 
-4. **MongoDB Collections**
-   - `battles`: battle_id, prompt, model_a_id, model_b_id, created_at
-   - `responses`: response_id, battle_id, model_id, response_text, latency_ms, created_at
-   - `votes`: vote_id, battle_id, user_id (optional), vote, voted_at
+4. **PostgreSQL Tables**
+   - `sessions`: session_id, title, user_id (NULL in MVP), created_at, last_active_at
+   - `battles`: battle_id, session_id, left_model_id, right_model_id, conversation (JSONB), status
+   - `votes`: vote_id, battle_id, session_id, vote, left_model_id (denorm), right_model_id (denorm), processing_status
 
 **Estimated Time:** 2-3 weeks
 
@@ -154,18 +168,21 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
    - `GET /api/leaderboard` - Get current leaderboard
      - Query params: category, sort_by, order
      - Return rankings from PostgreSQL
+     - Filter models with < 5 votes
    - Serve aggregated data (ELO scores, statistics)
 
 3. **Worker (Data Aggregation)**
-   - Hourly cron job to process new votes
-   - Calculate ELO ratings from MongoDB votes
-   - Update PostgreSQL tables:
-     - `model_stats`: model_id, elo_score, elo_ci, vote_count, win_rate, organization, license
-     - `leaderboards`: snapshot of rankings (optional for history tracking)
+   - Hourly cron job (APScheduler) to process pending votes
+   - Read from PostgreSQL `votes` table (`processing_status = 'pending'`)
+   - Denormalized model_ids in votes (avoids N+1 queries)
+   - Calculate ELO ratings using Bradley-Terry confidence intervals
+   - Update PostgreSQL `model_stats` table
+   - Mark votes as processed (`processing_status = 'processed'`)
+   - Store execution metadata in `worker_status` table
 
-4. **PostgreSQL Tables**
-   - `model_stats`: Aggregated statistics per model
-   - `leaderboards` (optional): Historical snapshots
+4. **PostgreSQL Tables** (already defined in Phase 1)
+   - `model_stats`: model_id, elo_score, elo_ci, vote_count, win_rate, organization, license
+   - `worker_status`: worker_name, last_run_at, status, votes_processed
 
 **Estimated Time:** 1-2 weeks
 
@@ -221,18 +238,20 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 
 **Active Phase:** Phase 0 - Project Initialization
 **Current Branch:** `develop`
-**Latest Update:** 2025-01-20
+**Latest Update:** 2025-01-21
 
 **Progress:**
 - ✅ Architecture designed
 - ✅ Tech stack finalized
 - ✅ WORKSPACE documentation completed
+- ✅ **Database design completed (PostgreSQL-only, session-based schema, no FK)**
+- ✅ **Project structure defined (uv workspace)**
 - ⏳ MVP implementation pending
 
 **Next Steps:**
-1. Set up project structure (backend, frontend, worker)
-2. Configure Docker Compose
-3. Create repository README.md
+1. Configure Docker Compose (PostgreSQL only)
+2. Create repository README.md
+3. Implement Alembic migrations (DATABASE_DESIGN.md)
 4. Begin Phase 1 (Battle MVP) implementation
 
 ---

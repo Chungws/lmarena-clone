@@ -13,26 +13,35 @@ Display ELO-based rankings for all models based on user votes collected from bat
 **Goals:**
 - Transparent model rankings based on real user votes
 - ELO rating system for fair comparison across different match counts
-- Fast leaderboard queries (read-optimized PostgreSQL)
+- Fast leaderboard queries (PostgreSQL with strategic indexes)
+- Accurate worker aggregation with retry-safe status tracking
 
 ---
 
 ## Architecture
 
 ```
-MongoDB (battles, votes)
-    ↓
-  Worker (hourly cron)
-    - Read new votes from MongoDB
-    - Calculate ELO ratings
-    - Update PostgreSQL
-    ↓
-PostgreSQL (model_stats, leaderboards)
-    ↓
+PostgreSQL (single database)
+  ├── votes (pending)
+  ↓
+Worker (hourly cron)
+  - Read pending votes
+  - Calculate ELO ratings
+  - Update model_stats
+  - Mark votes as processed
+  ↓
+PostgreSQL (model_stats updated)
+  ↓
 Backend API
-    ↓
+  ↓
 Frontend (Leaderboard UI)
 ```
+
+**Database Strategy** (see [DATABASE_DESIGN.md](../ARCHITECTURE/DATABASE_DESIGN.md)):
+- **PostgreSQL only** (no MongoDB)
+- Worker reads from `votes` table (filtering by `processing_status = 'pending'`)
+- **Denormalized votes:** `left_model_id` and `right_model_id` stored in votes (avoids N+1 queries)
+- **Status tracking:** `processing_status` field for retry safety (pending → processed/failed)
 
 ---
 
@@ -42,9 +51,9 @@ Frontend (Leaderboard UI)
 **Decision:** Hourly execution with configurable interval
 - **Default:** Run every hour at :00 (e.g., 00:00, 01:00, 02:00, ...)
 - **Timezone:** UTC
-- **Scheduler:** APScheduler or system cron
+- **Scheduler:** APScheduler
 - **Configuration:** Interval configurable via environment variable (e.g., `WORKER_INTERVAL_HOURS=1`)
-- Store last run timestamp in PostgreSQL `worker_status` table
+- Store execution metadata in `worker_status` table
 
 ### Confidence Interval Calculation
 **Decision:** Bradley-Terry Model (Option B)
@@ -69,12 +78,52 @@ def calculate_ci(vote_count: int) -> float:
 - Prevents unreliable rankings from insufficient data
 - Note: Will be upgraded with more sophisticated criteria in future (e.g., Bayesian rating)
 
-### Database Connections (Worker)
-**Decision:** Async connections to both databases
-- **MongoDB (Motor):** Read battles and votes
-- **PostgreSQL (asyncpg):** Write model_stats
-- Connection pooling for efficiency
-- Same configuration as Backend (see 001_BATTLE_MVP.md)
+### Vote Denormalization Strategy
+**Decision:** Store model_ids in votes table
+- **Problem:** Worker needs model IDs to calculate ELO, but querying battles table for each vote causes N+1 queries
+- **Solution:** Denormalize `left_model_id` and `right_model_id` into votes table
+- **Trade-off:** Slight data redundancy for significant performance gain
+
+**Without Denormalization (N+1 queries):**
+```python
+votes = await db.fetch_all("SELECT * FROM votes WHERE processing_status = 'pending'")
+for vote in votes:
+    battle = await db.fetch_one("SELECT * FROM battles WHERE battle_id = $1", vote["battle_id"])
+    # N+1 queries! (1 + N)
+```
+
+**With Denormalization (single query):**
+```python
+votes = await db.fetch_all("SELECT * FROM votes WHERE processing_status = 'pending'")
+for vote in votes:
+    # model_ids already in vote! (1 query)
+    winner = vote["left_model_id"] if vote["vote"] == "left_better" else ...
+```
+
+### Processing Status Tracking
+**Decision:** Use `processing_status` field instead of timestamp
+- **Field:** `processing_status` with values: 'pending', 'processed', 'failed'
+- **Why not timestamp?** Timestamp-based tracking (e.g., `voted_at > last_run_at`) has race conditions and requires careful timezone handling
+- **Benefits:**
+  - Retry-safe: Failed votes can be retried without duplicate processing
+  - Clear state: Easy to identify pending, completed, and failed votes
+  - Debugging: Error messages stored in `error_message` field
+
+### Database Connection (Worker)
+**Decision:** Async PostgreSQL with connection pooling
+```python
+# PostgreSQL (databases + asyncpg)
+from databases import Database
+
+POSTGRES_URI = os.getenv("DATABASE_URL", "postgresql://localhost/llmbattler")
+database = Database(
+    POSTGRES_URI,
+    min_size=2,      # Worker typically uses fewer connections
+    max_size=5,
+    timeout=10
+)
+```
+- **Note:** Worker uses ONLY PostgreSQL (no MongoDB)
 
 ### Error Logging (Worker)
 **Decision:** Python logging to stdout
@@ -89,59 +138,41 @@ def calculate_ci(vote_count: int) -> float:
 ### Phase 2.1: PostgreSQL Schema
 
 **Tasks:**
-- [ ] Create PostgreSQL tables
-  - [ ] `model_stats` table (model_id, elo_score, elo_ci, vote_count, win_rate, organization, license, updated_at)
-  - [ ] `leaderboards` table (optional, for historical snapshots)
-- [ ] Create Alembic migration (auto-generate)
-- [ ] Add indexes for fast queries (elo_score, vote_count)
+- [x] Create PostgreSQL tables (already in DATABASE_DESIGN.md)
+  - [x] `sessions` table
+  - [x] `battles` table
+  - [x] `votes` table (with denormalized model_ids and processing_status)
+  - [x] `model_stats` table (elo_score, elo_ci, vote_count, win_rate, etc.)
+  - [x] `worker_status` table
+- [ ] Create Alembic migration (based on DATABASE_DESIGN.md)
+- [ ] Add indexes for fast queries (elo_score, vote_count, processing_status)
 - [ ] Write tests for schema
 
-**Schema:**
-```sql
--- model_stats table
-CREATE TABLE model_stats (
-    id SERIAL PRIMARY KEY,
-    model_id VARCHAR(255) UNIQUE NOT NULL,
-    elo_score INTEGER DEFAULT 1500,
-    elo_ci FLOAT,  -- 95% confidence interval
-    vote_count INTEGER DEFAULT 0,
-    win_count INTEGER DEFAULT 0,
-    loss_count INTEGER DEFAULT 0,
-    tie_count INTEGER DEFAULT 0,
-    win_rate FLOAT,
-    organization VARCHAR(255),
-    license VARCHAR(50),  -- 'proprietary', 'open-source', etc.
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_elo_score ON model_stats(elo_score DESC);
-CREATE INDEX idx_vote_count ON model_stats(vote_count DESC);
-```
+**Schema Reference:** See [DATABASE_DESIGN.md](../ARCHITECTURE/DATABASE_DESIGN.md) for complete schema
 
 ---
 
 ### Phase 2.2: Worker - ELO Calculation
 
 **Tasks:**
-- [ ] Set up worker project structure (`worker/app/`)
-- [ ] Setup database connections
-  - [ ] MongoDB async client (Motor) for reading battles/votes
-  - [ ] PostgreSQL async client (asyncpg) for writing model_stats
+- [ ] Set up worker project structure (`worker/src/llmbattler_worker/`)
+- [ ] Setup database connection
+  - [ ] PostgreSQL async client (databases + asyncpg)
   - [ ] Connection pooling configuration
 - [ ] Setup logging (Python logging to stdout)
-- [ ] Create MongoDB → PostgreSQL aggregation script
-  - [ ] Read new votes from MongoDB (since last run timestamp)
-  - [ ] Retrieve battle documents to get model positions
+- [ ] Create vote aggregation script
+  - [ ] Read pending votes from PostgreSQL (`processing_status = 'pending'`)
   - [ ] Calculate ELO ratings using vote results
   - [ ] **Calculate confidence intervals using Bradley-Terry model** (SE = 400/sqrt(n), CI = 1.96 * SE)
   - [ ] Update `model_stats` in PostgreSQL
-  - [ ] Update last run timestamp in `worker_status` table
+  - [ ] **Mark votes as processed** (`processing_status = 'processed'`, `processed_at = NOW()`)
+  - [ ] **Handle errors:** Mark failed votes with `processing_status = 'failed'`, store error in `error_message`
+  - [ ] Update `worker_status` table with execution metadata
 - [ ] Implement ELO calculation algorithm
   - [ ] Use standard ELO formula (K-factor = 32, Initial ELO = 1500)
-  - [ ] Handle ties appropriately
+  - [ ] Handle ties appropriately (score = 0.5)
   - [ ] **Handle "both_bad" votes (score = 0.25 for both models)**
-  - [ ] Use model positions from battle document to determine vote outcome
-- [ ] Add scheduler (APScheduler or cron)
+- [ ] Add scheduler (APScheduler)
   - [ ] **Default: Run every hour at :00 (UTC)**
   - [ ] **Configurable interval via WORKER_INTERVAL_HOURS environment variable**
   - [ ] Store last run timestamp in PostgreSQL (`worker_status` table)
@@ -149,6 +180,7 @@ CREATE INDEX idx_vote_count ON model_stats(vote_count DESC);
   - [ ] Log aggregation start/complete
   - [ ] Log votes processed and ELO updates
   - [ ] Handle database connection errors
+  - [ ] Retry logic for transient failures
 - [ ] Write tests for ELO calculation and CI calculation
 
 **ELO Formula:**
@@ -178,13 +210,13 @@ def calculate_elo(rating_a, rating_b, result, k=K_FACTOR):
     new_rating_a = rating_a + k * (result - expected_a)
     return new_rating_a
 
-def get_score_from_vote(vote: str, position: str) -> float:
+def get_score_from_vote(vote: str, is_left: bool) -> float:
     """
-    Convert vote to ELO score
+    Convert vote to ELO score for a specific model
 
     Args:
         vote: "left_better", "right_better", "tie", "both_bad"
-        position: "left" or "right"
+        is_left: True if calculating for left model, False for right
 
     Returns:
         float: Score (S) for ELO calculation
@@ -193,20 +225,23 @@ def get_score_from_vote(vote: str, position: str) -> float:
         return 0.25  # Small penalty for both models (LM Arena approach)
     elif vote == "tie":
         return 0.5
-    elif (vote == "left_better" and position == "left") or \
-         (vote == "right_better" and position == "right"):
+    elif (vote == "left_better" and is_left) or \
+         (vote == "right_better" and not is_left):
         return 1.0
     else:
         return 0.0
 ```
+
+**Worker Implementation Reference:**
+See [DATABASE_DESIGN.md - Worker Flow](../ARCHITECTURE/DATABASE_DESIGN.md#2-worker-flow-elo-aggregation) for complete implementation
 
 ---
 
 ### Phase 2.3: Backend - Leaderboard API
 
 **Tasks:**
-- [ ] Setup PostgreSQL connection (async with asyncpg)
-  - [ ] Use same connection configuration as Backend (see 001_BATTLE_MVP.md)
+- [ ] Setup PostgreSQL connection (already configured for battles/votes)
+  - [ ] Use same Database client as Battle API
 - [ ] Implement `GET /api/leaderboard` endpoint
   - [ ] Query PostgreSQL `model_stats` table
   - [ ] **Filter out models with < 5 votes** (minimum vote requirement)
@@ -302,6 +337,30 @@ Response:
 
 ### PostgreSQL Tables
 
+See complete schema in [DATABASE_DESIGN.md](../ARCHITECTURE/DATABASE_DESIGN.md)
+
+**votes (with denormalization):**
+```typescript
+interface Vote {
+  id: number;
+  vote_id: string;
+  battle_id: string;             // UNIQUE (1:1)
+  session_id: string;
+  vote: 'left_better' | 'right_better' | 'tie' | 'both_bad';
+
+  // Denormalized fields (avoid N+1 queries)
+  left_model_id: string;
+  right_model_id: string;
+
+  // Worker processing status
+  processing_status: 'pending' | 'processed' | 'failed';
+  processed_at: Date | null;
+  error_message: string | null;
+
+  voted_at: Date;
+}
+```
+
 **model_stats:**
 ```typescript
 interface ModelStats {
@@ -320,6 +379,18 @@ interface ModelStats {
 }
 ```
 
+**worker_status:**
+```typescript
+interface WorkerStatus {
+  id: number;
+  worker_name: string;           // e.g., "elo_aggregator"
+  last_run_at: Date;
+  status: 'idle' | 'running' | 'success' | 'failed';
+  votes_processed: number;
+  error_message: string | null;
+}
+```
+
 ---
 
 ## Testing Strategy
@@ -327,8 +398,8 @@ interface ModelStats {
 **Worker:**
 - Unit tests for ELO calculation logic (including both_bad handling)
 - Unit tests for CI calculation (Bradley-Terry model)
-- Integration tests for MongoDB → PostgreSQL aggregation
-- Test cases: new votes, ties, both_bad, edge cases (0 votes), position randomization
+- Integration tests for vote aggregation
+- Test cases: new votes, ties, both_bad, edge cases (0 votes), status tracking (pending → processed/failed)
 
 **Backend:**
 - Unit tests for leaderboard query logic
@@ -341,8 +412,9 @@ interface ModelStats {
   3. Verify search/filter works
 
 **Test Data Generation:**
-- Use `scripts/seed_test_data.py` to generate battles and votes in MongoDB
-- Run worker manually to populate PostgreSQL with model_stats
+- Use `scripts/seed_test_data.py` to generate sessions and battles in PostgreSQL
+- Insert votes with `processing_status = 'pending'`
+- Run worker manually to process votes and populate model_stats
 - Verify leaderboard displays correctly with test data
 
 ---
@@ -351,9 +423,12 @@ interface ModelStats {
 
 - [ ] Worker runs hourly and calculates ELO ratings
 - [ ] PostgreSQL stores accurate model statistics
+- [ ] Denormalized votes table avoids N+1 queries
+- [ ] processing_status field ensures retry-safe aggregation
 - [ ] Leaderboard API returns sorted rankings
 - [ ] Frontend displays leaderboard with all columns
 - [ ] Confidence intervals displayed correctly
+- [ ] Models with < 5 votes excluded from leaderboard
 - [ ] At least 10 test battles conducted to populate leaderboard
 
 ---
@@ -365,12 +440,14 @@ interface ModelStats {
 - Category-based rankings (coding, creative writing, etc.)
 - Model comparison page (head-to-head stats)
 - Export leaderboard data (CSV, JSON)
+- Bayesian rating system (more sophisticated than minimum 5 votes)
 
 ---
 
 **Related Documents:**
+- [DATABASE_DESIGN.md](../ARCHITECTURE/DATABASE_DESIGN.md) - Complete database schema and worker implementation
+- [001_BATTLE_MVP.md](./001_BATTLE_MVP.md) - Battle mode feature
 - [00_ROADMAP.md](../00_ROADMAP.md) - Overall project roadmap
 - [CONVENTIONS/backend/](../CONVENTIONS/backend/) - Backend conventions
-- [001_BATTLE_MVP.md](./001_BATTLE_MVP.md) - Battle mode feature
 
-**Last Updated:** 2025-10-20
+**Last Updated:** 2025-01-21
