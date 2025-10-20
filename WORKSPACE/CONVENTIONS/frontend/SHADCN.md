@@ -1,10 +1,10 @@
-# shadcn/ui 규칙
+# shadcn/ui Rules
 
-## 🔴 필수 규칙 (MUST)
+## 🔴 Required Rules (MUST)
 
-### shadcn/ui 우선 사용
-✅ **Raw HTML 대신 shadcn/ui 컴포넌트 사용**
-❌ **`<button>`, `<div className="border">` 등 직접 사용 금지**
+### Prefer shadcn/ui Components
+✅ **Use shadcn/ui components instead of raw HTML**
+❌ **DO NOT use `<button>`, `<div className="border">` directly**
 
 ```tsx
 // ❌ WRONG
@@ -23,12 +23,12 @@ import { Button } from "@/components/ui/button"
 </Card>
 ```
 
-### 컴포넌트 추가
-✅ `npx shadcn@latest add <component>` 사용
-❌ components/ui/ 폴더 직접 수정 금지
+### Adding Components
+✅ Use `npx shadcn@latest add <component>`
+❌ DO NOT manually edit components/ui/ folder
 
 ```bash
-# 자주 사용하는 컴포넌트
+# Common components
 npx shadcn@latest add button
 npx shadcn@latest add card
 npx shadcn@latest add dialog
@@ -36,15 +36,15 @@ npx shadcn@latest add table
 npx shadcn@latest add form
 ```
 
-## ⚠️ 권장 컴포넌트
+## ⚠️ Recommended Components
 
-- **Button**: 모든 버튼
-- **Card**: 컨테이너
-- **Dialog**: 모달
-- **Table**: 테이블
-- **Form**: 폼 (react-hook-form 통합)
-- **Input, Select, Checkbox**: 폼 입력
+- **Button**: All buttons
+- **Card**: Containers
+- **Dialog**: Modals
+- **Table**: Tables
+- **Form**: Forms (react-hook-form integration)
+- **Input, Select, Checkbox**: Form inputs
 
 ---
 
-💬 **구체적인 shadcn/ui 컴포넌트 질문이 있으면 물어보세요**
+💬 **Ask if you have specific shadcn/ui component questions**
