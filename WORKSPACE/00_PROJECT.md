@@ -36,10 +36,12 @@ This project follows specific policies. **Always check before starting work.**
 
 ### 🚨 Key Policies to Remember
 
-1. **No Foreign Keys (ADR-001)**
-   - Do NOT use database-level FK constraints
-   - Handle referential integrity in application code with transactions
-   - Reason: Flexibility, horizontal scalability, microservice readiness
+1. **Foreign Keys (ADR-001)**
+   - ❌ **NO database-level FK constraints**
+   - Referential integrity handled at application level
+   - Benefits: Testing simplicity (no dependency order), easier development
+   - Application-level CASCADE deletion in service layer
+   - Repository pattern provides clean abstraction
 
 2. **PRs Always in English**
    - Title, description, checklist all in English
@@ -207,14 +209,14 @@ lmarena-clone/
 ```
 ┌─────────┐
 │ Client  │ (Next.js 15)
-│         │ - Battle UI (blind side-by-side)
+│         │ - Battle UI (blind side-by-side, session-based)
 │         │ - Leaderboard UI (ELO rankings)
 └────┬────┘
      │
 ┌────▼────────────────┐
 │ Backend (FastAPI)   │
 │                     │
-│ - Battle API        │
+│ - Session/Battle API│
 │ - Leaderboard API   │
 │ - Model Management  │
 └────┬────────────────┘
@@ -230,33 +232,33 @@ lmarena-clone/
      │       │  └────────┴────────┘     │
      │       └──────────────────────────┘
      │
-     ├─────► ┌────────────┐
-     │       │  MongoDB   │ (Write-optimized)
-     │       │            │ - battles
-     │       │            │ - responses
-     │       │            │ - votes
-     │       └─────┬──────┘
-     │             │
-     │       ┌─────▼──────┐
-     │       │   Worker   │ (Hourly cron)
-     │       │            │ - ELO calculation
-     │       │            │ - Statistics aggregation
-     │       └─────┬──────┘
-     │             │
-     └───────────► ┌────────────┐
-                   │ PostgreSQL │ (Read-optimized)
-                   │            │ - leaderboards
-                   │            │ - model_stats
-                   └────────────┘
+     └─────► ┌────────────────────────┐
+             │    PostgreSQL          │
+             │                        │
+             │  - sessions            │
+             │  - battles (JSONB)     │
+             │  - votes (denorm)      │
+             │  - model_stats         │
+             └────────┬───────────────┘
+                      │
+                ┌─────▼──────┐
+                │   Worker   │ (Hourly cron)
+                │            │ - Read pending votes
+                │            │ - ELO calculation
+                │            │ - Update model_stats
+                └────────────┘
 ```
 
 ### Key Design Decisions
 
-1. **No Foreign Keys (ADR-001)**: Application-level relationships only
-2. **Blind Testing**: Model identities hidden until after voting
-3. **Dual Database**: MongoDB for logs (write-heavy), PostgreSQL for aggregated data (read-heavy)
-4. **ELO Rankings**: Fair model comparison across different match counts
-5. **OpenAI-Compatible API**: Easy integration with any LLM provider
+1. **Foreign Keys (ADR-001)**: NO database-level FKs - application-level referential integrity for testing simplicity
+2. **Session-Based Architecture**: sessions → battles → votes hierarchy (like LM Arena)
+3. **Single PostgreSQL Database**: Simpler operations, ACID guarantees, clear scaling path
+4. **JSONB Conversation Storage**: OpenAI-compatible format for multi-turn conversations
+5. **Blind Testing**: Model identities hidden until after voting
+6. **ELO Rankings**: Fair model comparison across different match counts
+7. **OpenAI-Compatible API**: Easy integration with any LLM provider
+8. **Repository Pattern**: Abstraction layer for future database changes (Phase 4 sharding)
 
 ---
 

@@ -56,7 +56,7 @@ async def run_aggregation():
         raise
 
 
-def main():
+async def main():
     """
     Start worker with scheduler
 
@@ -88,7 +88,8 @@ def main():
 
     # Keep running
     try:
-        asyncio.get_event_loop().run_forever()
+        while True:
+            await asyncio.sleep(1)
     except (KeyboardInterrupt, SystemExit):
         logger.info("Shutting down worker...")
         scheduler.shutdown()
@@ -96,4 +97,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
