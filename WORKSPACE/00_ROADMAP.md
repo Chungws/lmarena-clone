@@ -75,6 +75,10 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
   - ✅ CONVENTIONS/ (completed)
   - ✅ ARCHITECTURE/ (completed)
   - ✅ FEATURES/ (completed)
+- ✅ **MVP Design Decisions finalized** - **PR #4 (2025-01-21)**
+  - All 12 implementation decisions documented
+  - Battle MVP: 9 decisions (position randomization, timeout/retry, CORS, logging, etc.)
+  - Leaderboard MVP: 5 decisions (worker scheduling, CI calculation, minimum votes, etc.)
 - ⏳ Project structure setup (backend, frontend, worker)
 - ⏳ Docker Compose configuration (PostgreSQL + MongoDB)
 - ⏳ Repository README.md
