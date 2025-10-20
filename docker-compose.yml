@@ -1,0 +1,128 @@
+# Full Stack Docker Compose
+#
+# Start all services:
+#   docker compose up -d
+#
+# View logs:
+#   docker compose logs -f [service_name]
+#
+# Stop all services:
+#   docker compose down
+#
+# Stop and remove volumes (WARNING: deletes all data):
+#   docker compose down -v
+#
+# Rebuild services:
+#   docker compose build
+#   docker compose up -d
+
+services:
+  # Databases
+  postgres:
+    image: postgres:16-alpine
+    container_name: llmbattler-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: llmbattler
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - llmbattler
+
+  mongodb:
+    image: mongo:8.0
+    container_name: llmbattler-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: llmbattler
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - llmbattler
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: llmbattler-backend
+    environment:
+      - POSTGRES_URI=postgresql+asyncpg://postgres:postgres@postgres:5432/llmbattler
+      - MONGODB_URI=mongodb://mongodb:27017/llmbattler
+      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - llmbattler
+
+  # Worker (ELO aggregation)
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    container_name: llmbattler-worker
+    environment:
+      - POSTGRES_URI=postgresql+asyncpg://postgres:postgres@postgres:5432/llmbattler
+      - MONGODB_URI=mongodb://mongodb:27017/llmbattler
+      - WORKER_INTERVAL_HOURS=1
+      - WORKER_TIMEZONE=UTC
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - llmbattler
+
+  # Frontend
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8000
+    container_name: llmbattler-frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - llmbattler
+
+networks:
+  llmbattler:
+    name: llmbattler_network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: llmbattler_postgres_data
+  mongodb_data:
+    name: llmbattler_mongodb_data
