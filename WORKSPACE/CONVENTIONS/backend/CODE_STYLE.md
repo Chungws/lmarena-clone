@@ -1,36 +1,37 @@
-# Backend 코드 스타일 규칙
+# Backend Code Style Rules
 
-## 🔴 필수 규칙 (MUST)
+## 🔴 Required Rules (MUST)
 
-### Import 위치
-✅ 파일 맨 위에만 작성
-❌ 함수/클래스 중간에 import 절대 금지
+### Import Location
+✅ Write imports only at the top of file
+❌ **NEVER import in the middle of functions/classes**
 
-### 주석
-✅ **영어로만 작성** (English only)
-❌ **한글 주석 절대 금지** (No Korean comments)
+### Comments
+✅ **Write in English only**
+❌ **NO Korean comments allowed**
 
 ### Type Hints
-✅ 모든 함수 파라미터와 리턴값에 타입 명시
+✅ Add type hints to all function parameters and return values
 ```python
 def get_user(user_id: int, db: Session) -> User | None:
     pass
 ```
 
-## ⚠️ 권장 사항 (SHOULD)
+## ⚠️ Recommendations (SHOULD)
 
-- Import 순서: 표준 라이브러리 → 외부 패키지 → 내부 모듈 (isort 자동 정렬)
-- Black 포매팅 (자동)
-- Ruff 린트 통과 필수
+- Import order: Standard library → External packages → Internal modules (isort auto-sorts)
+- Black formatting (automatic)
+- Ruff linting must pass
 
-## 🛠️ 자동 검사
+## 🛠️ Automated Checks
 
 ```bash
 cd backend
 uvx ruff check
+uvx ruff format --check
 uvx isort --check --profile black .
 ```
 
 ---
 
-💬 **구체적인 스타일 질문이 있으면 물어보세요**
+💬 **Ask if you have specific style questions**

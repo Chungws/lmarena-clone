@@ -1,34 +1,34 @@
-# UV 패키지 관리 규칙
+# UV Package Management Rules
 
-## 🔴 필수 규칙 (MUST)
+## 🔴 Required Rules (MUST)
 
-### 패키지 관리
+### Package Management
 ✅ `uv add <package>` (production)
 ✅ `uv add <package> --dev` (development)
-❌ **pip install 절대 사용 금지**
-❌ **pyproject.toml 직접 수정 금지**
+❌ **NEVER use pip install**
+❌ **NEVER manually edit pyproject.toml**
 
-### 명령어 실행
-✅ `uv run <command>` (pytest, uvicorn, alembic 등)
-✅ `uvx <tool>` (ruff, isort 같은 일회성 도구)
+### Command Execution
+✅ `uv run <command>` (pytest, uvicorn, alembic, etc.)
+✅ `uvx <tool>` (one-time tools like ruff, isort)
 
-### Git 커밋
-✅ `uv.lock` 반드시 커밋
-❌ `.venv/` 커밋 금지 (.gitignore에 추가)
+### Git Commits
+✅ `uv.lock` must be committed
+❌ `.venv/` must NOT be committed (add to .gitignore)
 
-## ⚠️ 권장 사항 (SHOULD)
+## ⚠️ Recommendations (SHOULD)
 
 ```bash
-# 프로젝트 초기 설정
+# Initial project setup
 uv sync
 
-# 패키지 제거
+# Remove package
 uv remove <package>
 
-# 의존성 검증
+# Verify dependencies
 uv sync --locked
 ```
 
 ---
 
-💬 **구체적인 uv 사용법 질문이 있으면 물어보세요**
+💬 **Ask if you have specific uv usage questions**
