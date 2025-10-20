@@ -1,0 +1,52 @@
+# Development Docker Compose - Database Only
+#
+# Start databases for local development:
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# Stop databases:
+#   docker compose -f docker-compose.dev.yml down
+#
+# Stop and remove volumes (WARNING: deletes all data):
+#   docker compose -f docker-compose.dev.yml down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: llmbattler-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: llmbattler
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:8.0
+    container_name: llmbattler-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: llmbattler
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    name: llmbattler_postgres_data
+  mongodb_data:
+    name: llmbattler_mongodb_data
