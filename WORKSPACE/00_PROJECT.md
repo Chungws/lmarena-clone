@@ -66,23 +66,31 @@ git clone https://github.com/Chungws/lmarena-clone.git
 cd lmarena-clone
 
 # Start infrastructure (PostgreSQL + MongoDB)
-docker compose up -d
+docker compose -f docker-compose.dev.yml up -d
 
-# Backend setup
+# Workspace setup (installs all Python packages)
+uv sync                                  # Sync entire workspace
+
+# Backend (in terminal 1)
 cd backend
-uv sync                       # Install dependencies
-uv run alembic upgrade head  # Run migrations
-uv run uvicorn app.main:app --reload --port 8000
+uv run alembic upgrade head              # Run migrations
+uv run uvicorn llmbattler_backend.main:app --reload --port 8000
 
-# Frontend setup (in new terminal)
+# Frontend (in terminal 2)
 cd frontend
 npm install
-npm run dev  # Port 3000
+npm run dev                              # Port 3000
 
-# Worker setup (optional for local dev)
+# Worker (optional for local dev, in terminal 3)
 cd worker
-uv sync
-uv run python -m app.main  # Run aggregation manually
+uv run python -m llmbattler_worker.main  # Run aggregation manually
+```
+
+**Alternative: Run from workspace root**
+```bash
+# After uv sync, you can run from root directory
+uv run --package llmbattler-backend uvicorn llmbattler_backend.main:app --reload
+uv run --package llmbattler-worker python -m llmbattler_worker.main
 ```
 
 **Endpoints:**
@@ -121,43 +129,74 @@ uv run pytest -s
 
 ## 🏗️ Project Structure
 
+**uv Workspace (Flat Layout):**
+
 ```
 lmarena-clone/
-├── backend/              # FastAPI application
-│   ├── app/
-│   │   ├── main.py      # FastAPI app entry
-│   │   ├── api/         # API routes (battle, leaderboard, models)
-│   │   ├── models/      # SQLModel models (PostgreSQL)
-│   │   ├── schemas/     # Pydantic schemas
-│   │   ├── services/    # Business logic
-│   │   └── mongodb/     # MongoDB operations
-│   ├── tests/           # pytest tests
-│   ├── alembic/         # Database migrations
-│   └── pyproject.toml
-├── frontend/            # Next.js application
+├── pyproject.toml            # Workspace root (defines members)
+├── uv.lock                   # Unified lockfile for all Python packages
+│
+├── backend/                  # FastAPI application (workspace member)
+│   ├── pyproject.toml        # Backend dependencies
 │   ├── src/
-│   │   ├── app/         # App Router pages
-│   │   │   ├── battle/  # Battle mode page
+│   │   └── llmbattler_backend/
+│   │       ├── __init__.py
+│   │       ├── main.py       # FastAPI app entry
+│   │       ├── api/          # API routes (battle, leaderboard, models)
+│   │       ├── services/     # Business logic
+│   │       └── mongodb/      # MongoDB operations
+│   ├── tests/                # pytest tests
+│   ├── alembic/              # Database migrations
+│   └── Dockerfile
+│
+├── worker/                   # Data aggregation worker (workspace member)
+│   ├── pyproject.toml        # Worker dependencies
+│   ├── src/
+│   │   └── llmbattler_worker/
+│   │       ├── __init__.py
+│   │       ├── main.py       # Worker entry (cron job)
+│   │       └── aggregators/  # Aggregation logic
+│   ├── tests/                # pytest tests
+│   └── Dockerfile
+│
+├── shared/                   # Shared code (workspace member)
+│   ├── pyproject.toml        # Shared dependencies
+│   └── src/
+│       └── llmbattler_shared/
+│           ├── __init__.py
+│           ├── models.py     # SQLModel models (shared)
+│           ├── schemas.py    # Pydantic schemas (shared)
+│           └── config.py     # Settings (shared)
+│
+├── frontend/                 # Next.js application (NOT in workspace)
+│   ├── src/
+│   │   ├── app/              # App Router pages
+│   │   │   ├── battle/       # Battle mode page
 │   │   │   └── leaderboard/  # Leaderboard page
-│   │   ├── components/  # React components
-│   │   └── lib/         # Utilities
-│   └── package.json
-├── worker/              # Data aggregation worker
-│   ├── app/
-│   │   ├── main.py      # Worker entry (cron job)
-│   │   └── aggregators/ # Aggregation logic
-│   ├── tests/
-│   └── pyproject.toml
-├── WORKSPACE/           # Documentation
-│   ├── 00_PROJECT.md    # This file
-│   ├── 00_ROADMAP.md    # Development roadmap
-│   ├── CONVENTIONS/     # Coding standards
-│   ├── ARCHITECTURE/    # ADRs
-│   └── FEATURES/        # Feature specs
-├── docker-compose.yml   # Local infrastructure
-├── CLAUDE.md            # AI assistant guidelines
+│   │   ├── components/       # React components
+│   │   └── lib/              # Utilities
+│   ├── package.json
+│   └── Dockerfile
+│
+├── WORKSPACE/                # Documentation
+│   ├── 00_PROJECT.md         # This file
+│   ├── 00_ROADMAP.md         # Development roadmap
+│   ├── CONVENTIONS/          # Coding standards
+│   ├── ARCHITECTURE/         # ADRs
+│   └── FEATURES/             # Feature specs
+│
+├── docker-compose.dev.yml    # DB only (development)
+├── docker-compose.yml        # Full stack (production/testing)
+├── CLAUDE.md                 # AI assistant guidelines
 └── README.md
 ```
+
+**Key Points:**
+- **uv Workspace:** All Python packages (`backend`, `worker`, `shared`) are workspace members
+- **Flat Layout:** All members at root level (no `packages/` folder)
+- **Single Lockfile:** `uv.lock` ensures consistent dependencies across workspace
+- **Code Sharing:** `backend` and `worker` depend on `shared` via `{ workspace = true }`
+- **Unified Python Version:** All members share `requires-python = ">=3.11"`
 
 ---
 
