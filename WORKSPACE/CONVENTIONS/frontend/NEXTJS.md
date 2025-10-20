@@ -1,11 +1,11 @@
-# Next.js 규칙
+# Next.js Rules
 
-## 🔴 필수 규칙 (MUST)
+## 🔴 Required Rules (MUST)
 
-### RSC (React Server Components) 패턴
-✅ **`page.tsx` = Server Component** (데이터 fetching)
-✅ **`*-client.tsx` = Client Component** (UI 렌더링 & 인터랙션)
-❌ **page.tsx에서 useState, useEffect, onClick 사용 금지**
+### RSC (React Server Components) Pattern
+✅ **`page.tsx` = Server Component** (data fetching)
+✅ **`*-client.tsx` = Client Component** (UI rendering & interactions)
+❌ **DO NOT use useState, useEffect, onClick in page.tsx**
 
 ```typescript
 // page.tsx (Server) - MUST be async
@@ -22,13 +22,22 @@ export default function ClientComponent({ data }: Props) {
 }
 ```
 
-### Feature 구조 (앞장서 따르기)
-✅ **`app/(dashboard)/announcements/` 구조 참고 필수**
-✅ 파일 순서: `_types.ts` → `service.ts` → `use-*.ts` → `*-client.tsx` → `page.tsx`
+### Feature Structure Pattern
+✅ **Follow consistent file structure**
+✅ File order: `_types.ts` → `service.ts` → `use-*.ts` → `*-client.tsx` → `page.tsx`
+
+```bash
+app/feature-name/
+├── _types.ts              # TypeScript interfaces
+├── service.ts             # API calls
+├── use-feature.ts         # Custom hooks
+├── feature-client.tsx     # Client component
+└── page.tsx               # Server component
+```
 
 ### router.refresh()
-✅ **Mutation 후 `router.refresh()` 호출** (page.tsx 재실행)
-✅ Custom hook에서 호출 (client component에서 직접 호출 금지)
+✅ **Call `router.refresh()` after mutations** (re-runs page.tsx)
+✅ Call from custom hooks (DO NOT call directly in client components)
 
 ```typescript
 // use-feature.ts
@@ -45,25 +54,25 @@ export function useFeature() {
 ```
 
 ### API Client
-✅ **`apiClient.get/post/put/delete` 사용**
-❌ **fetch() 직접 사용 금지**
+✅ **Use `apiClient.get/post/put/delete`**
+❌ **DO NOT use fetch() directly**
 
 ```typescript
 // service.ts
 import { apiClient } from "@/lib/apiClient"
 
-export async function listSamples() {
-  return await apiClient.get("/api/v1/samples")
+export async function listBattles() {
+  return await apiClient.get("/api/battles")
 }
 ```
 
-## ⚠️ 권장 사항 (SHOULD)
+## ⚠️ Recommendations (SHOULD)
 
 ```bash
-# 개발 서버
+# Dev server
 npm run dev
 
-# 빌드
+# Build
 npm run build
 
 # Lint
@@ -72,4 +81,4 @@ npm run lint
 
 ---
 
-💬 **구체적인 Next.js RSC 패턴 질문이 있으면 물어보세요**
+💬 **Ask if you have specific Next.js RSC pattern questions**

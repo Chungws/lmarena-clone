@@ -41,19 +41,26 @@ User → Frontend (Next.js)
 
 **Tasks:**
 - [ ] Create MongoDB collections schema
-  - [ ] `battles` collection (battle_id, prompt, model_a_id, model_b_id, created_at)
-  - [ ] `responses` collection (response_id, battle_id, model_id, response_text, latency_ms, created_at)
+  - [ ] `battles` collection (battle_id, model_a_id, model_b_id, messages[], created_at)
+  - [ ] `messages` subdocument: (message_id, prompt, responses[], timestamp)
+  - [ ] `responses` subdocument: (model_id, response_text, latency_ms)
   - [ ] `votes` collection (vote_id, battle_id, vote, voted_at)
 - [ ] Implement `POST /api/battles` endpoint
   - [ ] Accept user prompt (text)
   - [ ] Randomly select 2 models from available pool
   - [ ] Call LLM APIs in parallel (async)
-  - [ ] Store battle and responses in MongoDB
+  - [ ] Store battle with first message in MongoDB
   - [ ] Return anonymous responses (model IDs hidden)
+- [ ] Implement `POST /api/battles/{battle_id}/messages` endpoint
+  - [ ] Accept follow-up prompt
+  - [ ] Retrieve conversation history from battle
+  - [ ] Call LLM APIs with full message history (OpenAI chat format)
+  - [ ] Append new message to battle
+  - [ ] Return anonymous responses
 - [ ] Add error handling (API failures, timeouts)
-- [ ] Write tests for battle creation
+- [ ] Write tests for battle creation and multi-turn conversations
 
-**API Spec:**
+**API Spec (Initial Battle):**
 ```
 POST /api/battles
 Request:
@@ -64,6 +71,7 @@ Request:
 Response:
 {
   "battle_id": "battle_123",
+  "message_id": "msg_1",
   "responses": [
     {
       "position": "left",
@@ -74,6 +82,33 @@ Response:
       "position": "right",
       "text": "Paris is the capital city of France.",
       "latency_ms": 189
+    }
+  ]
+}
+```
+
+**API Spec (Follow-up Message):**
+```
+POST /api/battles/battle_123/messages
+Request:
+{
+  "prompt": "What about its population?"
+}
+
+Response:
+{
+  "battle_id": "battle_123",
+  "message_id": "msg_2",
+  "responses": [
+    {
+      "position": "left",
+      "text": "Paris has approximately 2.1 million people...",
+      "latency_ms": 287
+    },
+    {
+      "position": "right",
+      "text": "The population of Paris is around 2.2 million...",
+      "latency_ms": 201
     }
   ]
 }
@@ -116,15 +151,17 @@ Response:
 
 **Tasks:**
 - [ ] Create model configuration system (environment-based)
-  - [ ] Support Ollama endpoints
-  - [ ] Support vLLM endpoints
-  - [ ] Support external APIs (OpenAI, Anthropic, etc.)
+  - [ ] **MVP: OpenAI-compatible endpoints only** (Ollama, vLLM, OpenAI, etc.)
+  - [ ] Configuration via environment variables (model name, base URL, API key)
 - [ ] Implement `GET /api/models` endpoint
   - [ ] Return list of available models (name, provider, status)
 - [ ] Create LLM API client (httpx-based)
-  - [ ] OpenAI-compatible API format
+  - [ ] **OpenAI chat completion format** (`/v1/chat/completions`)
+  - [ ] Support conversation history for multi-turn battles
   - [ ] Error handling and retry logic
 - [ ] Write tests for model management
+
+**Note:** MVP only supports OpenAI-compatible API endpoints to simplify implementation. All models must expose `/v1/chat/completions` endpoint compatible with OpenAI's API specification.
 
 **API Spec:**
 ```
@@ -160,20 +197,28 @@ Response:
   - [ ] "Submit" button to create battle
   - [ ] Loading state during API calls
   - [ ] Side-by-side response display (Assistant A vs Assistant B)
+  - [ ] Conversation history display (scrollable)
+  - [ ] Follow-up prompt input (available before voting)
+  - [ ] "Send Follow-up" button
   - [ ] Voting buttons: "Left is Better", "Tie", "Both are bad", "Right is Better"
   - [ ] Reveal model names after voting
+  - [ ] Disable follow-up input after voting
 - [ ] Add error handling (API failures, network errors)
-- [ ] Use shadcn/ui components (Button, Card, Textarea, Alert)
+- [ ] Use shadcn/ui components (Button, Card, Textarea, Alert, ScrollArea)
 - [ ] Add responsive design (mobile-friendly)
 
 **UI Flow:**
 ```
-1. User enters prompt
+1. User enters initial prompt
 2. Click "Submit" → Show loading spinner
 3. Display two responses side-by-side (anonymous)
-4. User clicks voting button
-5. Reveal model names below responses
-6. Show "New Battle" button to restart
+4. [Optional] User enters follow-up prompt
+5. Click "Send Follow-up" → Show loading spinner
+6. Append new responses to conversation history
+7. Repeat steps 4-6 as needed
+8. User clicks voting button (ends conversation)
+9. Reveal model names below entire conversation
+10. Show "New Battle" button to restart
 ```
 
 ---
@@ -183,12 +228,13 @@ Response:
 **Tasks:**
 - [ ] Create API client service (`src/lib/api/battles.ts`)
   - [ ] `createBattle(prompt: string)`
+  - [ ] `sendFollowUp(battleId: string, prompt: string)`
   - [ ] `submitVote(battleId: string, vote: string)`
 - [ ] Create custom hooks
-  - [ ] `useBattle()` for battle state management
+  - [ ] `useBattle()` for battle state management (including conversation history)
   - [ ] `useVote()` for voting actions
 - [ ] Handle loading and error states
-- [ ] Add TypeScript types for API responses
+- [ ] Add TypeScript types for API responses (Battle, Message, Response, Vote)
 
 ---
 
@@ -201,23 +247,45 @@ Response:
 {
   "_id": "ObjectId",
   "battle_id": "battle_123",
-  "prompt": "What is the capital of France?",
   "model_a_id": "gpt-4o-mini",
   "model_b_id": "llama-3.1-8b",
+  "messages": [
+    {
+      "message_id": "msg_1",
+      "prompt": "What is the capital of France?",
+      "responses": [
+        {
+          "model_id": "gpt-4o-mini",
+          "response_text": "The capital of France is Paris.",
+          "latency_ms": 234
+        },
+        {
+          "model_id": "llama-3.1-8b",
+          "response_text": "Paris is the capital city of France.",
+          "latency_ms": 189
+        }
+      ],
+      "timestamp": "2025-01-20T10:30:05Z"
+    },
+    {
+      "message_id": "msg_2",
+      "prompt": "What about its population?",
+      "responses": [
+        {
+          "model_id": "gpt-4o-mini",
+          "response_text": "Paris has approximately 2.1 million people...",
+          "latency_ms": 287
+        },
+        {
+          "model_id": "llama-3.1-8b",
+          "response_text": "The population of Paris is around 2.2 million...",
+          "latency_ms": 201
+        }
+      ],
+      "timestamp": "2025-01-20T10:31:12Z"
+    }
+  ],
   "created_at": "2025-01-20T10:30:00Z"
-}
-```
-
-**responses:**
-```json
-{
-  "_id": "ObjectId",
-  "response_id": "resp_456",
-  "battle_id": "battle_123",
-  "model_id": "gpt-4o-mini",
-  "response_text": "The capital of France is Paris.",
-  "latency_ms": 234,
-  "created_at": "2025-01-20T10:30:05Z"
 }
 ```
 
@@ -256,20 +324,23 @@ Response:
 - [ ] Users can create battles with any prompt
 - [ ] Two random models are selected and called in parallel
 - [ ] Responses are displayed anonymously
+- [ ] Users can send follow-up prompts and continue multi-turn conversations
+- [ ] Conversation history is maintained and sent to LLMs for context
 - [ ] Users can vote and see model identities revealed
+- [ ] Follow-up input is disabled after voting
 - [ ] All API endpoints tested and working
 - [ ] Frontend UI is responsive and error-free
-- [ ] At least 2 models configured (e.g., Ollama models)
+- [ ] At least 2 OpenAI-compatible models configured (e.g., Ollama models)
 
 ---
 
 ## Future Enhancements (Post-MVP)
 
-- Follow-up prompts (continue conversation)
 - User authentication (track votes per user)
 - Rate limiting (prevent spam)
 - Model filtering by category (coding, creative, etc.)
 - Share battle results (URL sharing)
+- Multi-modal battles (image, audio, video)
 
 ---
 

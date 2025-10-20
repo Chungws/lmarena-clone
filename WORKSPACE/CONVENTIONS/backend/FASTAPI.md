@@ -1,21 +1,21 @@
-# FastAPI 규칙
+# FastAPI Rules
 
-## 🔴 필수 규칙 (MUST)
+## 🔴 Required Rules (MUST)
 
-### Feature 모듈 구조
-✅ 4-layer 구조: `models.py` → `schemas.py` → `service.py` → `router.py`
-✅ **Service Layer에 비즈니스 로직 집중**
-✅ **Router는 얇게 유지** (요청/응답만)
+### Feature Module Structure
+✅ 4-layer structure: `models.py` → `schemas.py` → `service.py` → `router.py`
+✅ **Concentrate business logic in Service Layer**
+✅ **Keep Router thin** (request/response only)
 
 ### Dependency Injection
-✅ `db: AsyncSession = Depends(get_db)` 사용
+✅ Use `db: AsyncSession = Depends(get_db)`
 ✅ Custom dependencies for auth, validation
 
 ### Async/Await
-✅ 모든 database call에 `await` 사용
-❌ **Sync call in async function 금지**
+✅ Use `await` for all database calls
+❌ **NO sync calls in async functions**
 
-## ⚠️ 권장 사항 (SHOULD)
+## ⚠️ Recommendations (SHOULD)
 
 ```python
 # Schema naming
@@ -39,4 +39,4 @@ status_code=status.HTTP_204_NO_CONTENT  # 204
 
 ---
 
-💬 **구체적인 FastAPI 패턴 질문이 있으면 물어보세요**
+💬 **Ask if you have specific FastAPI pattern questions**

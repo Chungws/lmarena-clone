@@ -70,7 +70,7 @@ CONVENTIONS/
 ### Common
 ```
 [ ] Git Flow: Work on feature/* branches
-[ ] Target Branch: PR to main
+[ ] Target Branch: PR to develop
 [ ] PR Language: English
 [ ] Commit Format: <type>: <subject>
 [ ] PR Size: 300 lines or less
