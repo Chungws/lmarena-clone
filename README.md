@@ -29,9 +29,7 @@ Inspired by [LM Arena](https://lmarena.ai), built with modern web technologies.
 ### Backend
 - **API Server**: FastAPI with async/await
 - **Worker**: Python cron job (APScheduler) for data aggregation
-- **Databases**:
-  - PostgreSQL: Read-optimized aggregated data (leaderboards, statistics)
-  - MongoDB: Write-optimized log data (battles, responses, votes)
+- **Database**: PostgreSQL (single database for all data)
 
 ### Frontend
 - **Framework**: Next.js 15 with App Router
@@ -65,7 +63,7 @@ cd lmarena-clone
 # Optional: Customize environment variables
 cp .env.example .env
 
-# Start all services (PostgreSQL, MongoDB, Backend, Worker, Frontend)
+# Start all services (PostgreSQL, Backend, Worker, Frontend)
 docker compose up -d
 
 # View logs
@@ -89,7 +87,7 @@ docker compose down
 git clone https://github.com/Chungws/lmarena-clone.git
 cd lmarena-clone
 
-# Start databases only
+# Start PostgreSQL only
 docker compose -f docker-compose.dev.yml up -d
 
 # Install workspace dependencies
@@ -126,8 +124,7 @@ lmarena-clone/
 │   │   └── llmbattler_backend/
 │   │       ├── main.py       # FastAPI app entry
 │   │       ├── api/          # API routes
-│   │       ├── services/     # Business logic
-│   │       └── mongodb/      # MongoDB operations
+│   │       └── services/     # Business logic
 │   ├── tests/                # pytest tests
 │   ├── alembic/              # Database migrations
 │   └── Dockerfile
@@ -184,19 +181,20 @@ lmarena-clone/
          │
          ├──► External LLM APIs (OpenAI, Anthropic, etc.)
          │
-         ├──► MongoDB (battles, responses, votes)
+         ├──► PostgreSQL (sessions, battles, votes, model_stats)
          │        │
          │   ┌────▼────────┐
          │   │   Worker    │ (Hourly ELO aggregation)
          │   └────┬────────┘
          │        │
-         └──────► PostgreSQL (leaderboards, model_stats)
+         └────────┘
 ```
 
 **Key Design Decisions:**
 - **No Foreign Keys**: Application-level relationships only ([ADR-001](WORKSPACE/ARCHITECTURE/ADR_001-No_Foreign_Keys.md))
 - **Blind Testing**: Model identities hidden until after voting
-- **Dual Database**: MongoDB for write-heavy logs, PostgreSQL for read-heavy leaderboards
+- **PostgreSQL-Only**: Single database for MVP (10 QPS scale), with clear scalability path
+- **Session-Based Schema**: Battles grouped into sessions with JSONB conversation storage
 - **ELO Rankings**: Fair model comparison using chess-style ratings
 
 ---
