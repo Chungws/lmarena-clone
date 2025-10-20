@@ -1,0 +1,18 @@
+[project]
+name = "llmbattler"
+version = "0.1.0"
+description = "AI Language Model Battle Arena - Workspace Root"
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+dependencies = []
+
+[tool.uv.workspace]
+members = ["backend", "worker", "shared"]
+
+[tool.uv.sources]
+llmbattler-shared = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
