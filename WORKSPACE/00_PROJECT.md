@@ -25,7 +25,7 @@ This project follows specific policies. **Always check before starting work.**
 | Policy | This Project | Reference |
 |--------|--------------|-----------|
 | **Foreign Keys** | ❌ **NOT used** | [ADR-001](./ARCHITECTURE/ADR_001-No_Foreign_Keys.md) |
-| **Main Branch** | ✅ `main` | [GIT_FLOW.md](./CONVENTIONS/GIT_FLOW.md) |
+| **Main Branch** | ✅ `develop` | [GIT_FLOW.md](./CONVENTIONS/GIT_FLOW.md) |
 | **PR Language** | ✅ **English** | [CLAUDE.md](../CLAUDE.md) |
 | **PR Assignee** | ✅ **Chungws** | [CLAUDE.md](../CLAUDE.md) |
 | **PR Reviewer** | ✅ **Chungws** | [CLAUDE.md](../CLAUDE.md) |
@@ -45,9 +45,8 @@ This project follows specific policies. **Always check before starting work.**
    - Title, description, checklist all in English
    - Follow GitHub PR best practices
 
-3. **main Branch is Primary**
-   - `feature/*` → `main` merge
-   - No `develop` branch (different from other Dudaji projects)
+3. **develop Branch is Primary**
+   - `feature/*` → `develop` merge
 
 ---
 
@@ -97,6 +96,7 @@ uv run python -m app.main  # Run aggregation manually
 ```bash
 cd backend
 uvx ruff check
+uvx ruff format --check
 uvx isort --check --profile black .
 uv run pytest -s
 ```
@@ -112,6 +112,7 @@ npm run lint
 ```bash
 cd worker
 uvx ruff check
+uvx ruff format --check
 uvx isort --check --profile black .
 uv run pytest -s
 ```

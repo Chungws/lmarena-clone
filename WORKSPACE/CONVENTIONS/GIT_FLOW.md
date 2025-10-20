@@ -4,14 +4,14 @@
 
 ### Branch Verification
 ✅ **MUST verify branch before commit**
-❌ **NEVER work directly on `main` branch**
+❌ **NEVER work directly on `develop` branch**
 ✅ **ALWAYS create `feature/*` branch first**
 
 ```bash
 # ALWAYS check before work!
 git branch --show-current
 
-# If on main, immediately create feature branch
+# If on develop, immediately create feature branch
 git checkout -b feature/feature-name
 ```
 
@@ -19,17 +19,17 @@ git checkout -b feature/feature-name
 
 | Branch | Purpose | Branch From | Merge To |
 |--------|---------|-------------|----------|
-| `main` | Production (Main branch) | - | - |
-| `feature/*` | Feature development | `main` | `main` |
-| `release/*` | Release preparation | `main` | `main` |
-| `hotfix/*` | Urgent fixes | `main` | `main` |
+| `develop` | Development (Main branch) | - | - |
+| `feature/*` | Feature development | `develop` | `develop` |
+| `release/*` | Release preparation | `develop` | `develop` |
+| `hotfix/*` | Urgent fixes | `develop` | `develop` |
 
 ### Feature Workflow
 
 ```bash
-# 1. Update main and create branch
-git checkout main
-git pull origin main
+# 1. Update develop and create branch
+git checkout develop
+git pull origin develop
 git checkout -b feature/feature-name-phase-1
 
 # 2. Work and commit
@@ -37,10 +37,10 @@ git add .
 git commit -m "feat: add feature"
 git push -u origin feature/feature-name-phase-1
 
-# 3. Create PR (target: main)
+# 3. Create PR (target: develop)
 # 4. After merge, clean up local branch
-git checkout main
-git pull origin main
+git checkout develop
+git pull origin develop
 git branch -d feature/feature-name-phase-1
 ```
 
@@ -53,15 +53,15 @@ git branch -d feature/feature-name-phase-1
 ## ⚠️ Recommendations (SHOULD)
 
 ```bash
-# If accidentally worked on main (before commit)
+# If accidentally worked on develop (before commit)
 git stash
 git checkout -b feature/new-feature
 git stash pop
 
-# If accidentally worked on main (after commit)
+# If accidentally worked on develop (after commit)
 git checkout -b feature/new-feature  # Create branch with current state
-git checkout main
-git reset --hard origin/main  # Reset main
+git checkout develop
+git reset --hard origin/develop  # Reset develop
 ```
 
 ---

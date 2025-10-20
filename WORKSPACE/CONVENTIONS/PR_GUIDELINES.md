@@ -9,7 +9,7 @@
 
 ```bash
 # Check changed lines
-git diff main --shortstat
+git diff develop --shortstat
 ```
 
 ### Granular Commits
@@ -20,7 +20,7 @@ git diff main --shortstat
 
 | Item | Setting |
 |------|---------|
-| **Target Branch** | `main` (required) |
+| **Target Branch** | `develop` (required) |
 | **PR Language** | **English** |
 | **Assignee** | **Chungws** |
 | **Reviewer** | **Chungws** |
@@ -61,7 +61,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 /check-pr  # (to be configured)
 
 # Check PR size
-git diff main --stat
+git diff develop --stat
 
 # If over 300 lines: Split into smaller phases or multiple PRs
 ```

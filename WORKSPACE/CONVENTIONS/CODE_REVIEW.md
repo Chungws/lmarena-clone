@@ -15,7 +15,7 @@
 [ ] Conventional Commits (<type>: <subject>)
 [ ] PR size 300 lines or less
 [ ] NO Foreign Keys (Backend/Worker)
-[ ] Target branch: main
+[ ] Target branch: develop
 [ ] PR language: English
 [ ] Comments: English
 ```
@@ -24,6 +24,7 @@
 ```
 [ ] TDD: Write tests first
 [ ] uvx ruff check passed
+[ ] uvx ruff format --check passed
 [ ] uvx isort --check passed
 [ ] uv run pytest -s passed
 [ ] Use uv add for dependencies
@@ -46,8 +47,8 @@
 /review-phase
 
 # Manual checks
-git diff main --stat
-cd backend && uvx ruff check && uv run pytest -s
+git diff develop --stat
+cd backend && uvx ruff check && uvx ruff format --check && uv run pytest -s
 cd frontend && npm run lint
 # For UI changes: Manual Playwright MCP verification (see frontend/TESTING.md)
 ```

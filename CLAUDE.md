@@ -30,7 +30,7 @@ git branch --show-current
 | Policy | This Project | Reference |
 |--------|--------------|-----------|
 | Foreign Keys | ❌ **NOT used** | [ADR-001](./WORKSPACE/ARCHITECTURE/ADR_001-No_Foreign_Keys.md) |
-| Main Branch | ✅ `main` | - |
+| Main Branch | ✅ `develop` | - |
 | PR Language | ✅ **English** | [PR Guidelines](./WORKSPACE/CONVENTIONS/PR_GUIDELINES.md) |
 | PR Assignee | ✅ **Chungws** | - |
 | PR Reviewer | ✅ **Chungws** | - |
@@ -44,6 +44,7 @@ git branch --show-current
 ```bash
 cd backend
 uvx ruff check
+uvx ruff format --check
 uvx isort --check --profile black .
 uv run pytest -s
 ```
@@ -59,6 +60,7 @@ npm run lint
 ```bash
 cd worker
 uvx ruff check
+uvx ruff format --check
 uvx isort --check --profile black .
 uv run pytest -s
 ```
@@ -163,7 +165,7 @@ Planned agents:
 ## 📊 Current Status
 
 **Project Phase:** Initial Setup & Documentation
-**Current Branch:** `main`
+**Current Branch:** `develop`
 
 **Initialization Progress:**
 - ✅ Architecture design completed
