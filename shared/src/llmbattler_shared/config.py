@@ -25,7 +25,6 @@ class Settings(BaseSettings):
 
     # Database URLs
     postgres_uri: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler"
-    mongodb_uri: str = "mongodb://localhost:27017/llmbattler"
 
     # CORS settings (backend only)
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
@@ -61,11 +60,6 @@ class Settings(BaseSettings):
     # ELO settings
     initial_elo: int = 1500
     k_factor: int = 32
-
-    # MongoDB connection pool settings
-    mongodb_max_pool_size: int = 10
-    mongodb_min_pool_size: int = 2
-    mongodb_server_selection_timeout_ms: int = 5000
 
     # PostgreSQL connection pool settings
     postgres_pool_size: int = 5
