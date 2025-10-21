@@ -7,12 +7,7 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-# ==================== Battle Schemas ====================
-
-
-class BattleCreate(BaseModel):
-    """Request schema for creating a new battle"""
-    prompt: str = Field(..., min_length=1, max_length=10000)
+# ==================== Common Schemas ====================
 
 
 class Response(BaseModel):
@@ -20,6 +15,30 @@ class Response(BaseModel):
     position: Literal["left", "right"]
     text: str
     latency_ms: int
+
+
+# ==================== Session Schemas ====================
+
+
+class SessionCreate(BaseModel):
+    """Request schema for creating a new session"""
+    prompt: str = Field(..., min_length=1, max_length=10000)
+
+
+class SessionResponse(BaseModel):
+    """Response schema for session creation (includes first battle)"""
+    session_id: str
+    battle_id: str
+    message_id: str  # Always "msg_1" for first message
+    responses: List[Response]
+
+
+# ==================== Battle Schemas ====================
+
+
+class BattleCreate(BaseModel):
+    """Request schema for creating a new battle"""
+    prompt: str = Field(..., min_length=1, max_length=10000)
 
 
 class BattleResponse(BaseModel):

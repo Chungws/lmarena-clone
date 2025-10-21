@@ -2,9 +2,10 @@
 SQLModel models for PostgreSQL (shared between backend and worker)
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Dict, List, Optional
 
+from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Column, Field, SQLModel
 
@@ -21,8 +22,14 @@ class Session(SQLModel, table=True):
     session_id: str = Field(unique=True, index=True, max_length=50)
     title: str = Field(max_length=200)  # First prompt for display
     user_id: Optional[int] = Field(default=None, index=True)  # NULL for anonymous (MVP)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    last_active_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
+    last_active_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
+    )
 
 
 class Battle(SQLModel, table=True):
@@ -40,11 +47,17 @@ class Battle(SQLModel, table=True):
     right_model_id: str = Field(max_length=255)
     conversation: List[Dict[str, Any]] = Field(
         default_factory=list,
-        sa_column=Column(JSONB, nullable=False, server_default="'[]'::jsonb")
+        sa_column=Column(JSONB, nullable=False, server_default="[]")
     )
     status: str = Field(default="ongoing", max_length=20, index=True)  # ongoing, voted, abandoned
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
 
 
 class Vote(SQLModel, table=True):
@@ -63,9 +76,15 @@ class Vote(SQLModel, table=True):
     left_model_id: str = Field(max_length=255)  # Denormalized from battle
     right_model_id: str = Field(max_length=255)  # Denormalized from battle
     processing_status: str = Field(default="pending", max_length=20, index=True)  # pending, processed, failed
-    processed_at: Optional[datetime] = Field(default=None)
+    processed_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True)
+    )
     error_message: Optional[str] = Field(default=None)
-    voted_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    voted_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(DateTime(timezone=True), nullable=False, index=True)
+    )
 
 
 class ModelStats(SQLModel, table=True):
@@ -87,7 +106,10 @@ class ModelStats(SQLModel, table=True):
     win_rate: float = Field(default=0.0)
     organization: str = Field(max_length=255)
     license: str = Field(max_length=50)  # 'proprietary', 'open-source', etc.
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
 
 
 class WorkerStatus(SQLModel, table=True):
@@ -100,7 +122,10 @@ class WorkerStatus(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     worker_name: str = Field(unique=True, max_length=100)  # e.g., "elo_aggregator"
-    last_run_at: datetime = Field(default_factory=datetime.utcnow)
+    last_run_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(DateTime(timezone=True), nullable=False)
+    )
     status: str = Field(max_length=50)  # 'success', 'failed', 'running'
     votes_processed: int = Field(default=0)
     error_message: Optional[str] = Field(default=None, max_length=1000)

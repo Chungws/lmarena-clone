@@ -2,12 +2,41 @@
 Tests for model management API endpoints
 """
 
+from unittest.mock import Mock
+
 from fastapi.testclient import TestClient
+
+from llmbattler_backend.main import app
+from llmbattler_backend.services.model_service import get_model_service
 
 
 def test_get_models_returns_list(client: TestClient):
     """Test GET /api/models returns list of available models"""
-    response = client.get("/api/models")
+    # Mock model service
+    mock_service = Mock()
+    mock_service.list_models.return_value = [
+        {
+            "model_id": "llama-3-1-8b",
+            "name": "Llama 3.1 8B",
+            "provider": "Meta",
+            "status": "active",
+        },
+        {
+            "model_id": "qwen-2-5-7b",
+            "name": "Qwen 2.5 7B",
+            "provider": "Alibaba",
+            "status": "active",
+        },
+    ]
+
+    # Override dependency
+    app.dependency_overrides[get_model_service] = lambda: mock_service
+
+    try:
+        response = client.get("/api/models")
+    finally:
+        # Clean up override
+        app.dependency_overrides.clear()
 
     assert response.status_code == 200
     data = response.json()
@@ -28,7 +57,31 @@ def test_get_models_returns_list(client: TestClient):
 
 def test_get_models_contains_expected_models(client: TestClient):
     """Test GET /api/models contains models from config"""
-    response = client.get("/api/models")
+    # Mock model service
+    mock_service = Mock()
+    mock_service.list_models.return_value = [
+        {
+            "model_id": "llama-3-1-8b",
+            "name": "Llama 3.1 8B",
+            "provider": "Meta",
+            "status": "active",
+        },
+        {
+            "model_id": "qwen-2-5-7b",
+            "name": "Qwen 2.5 7B",
+            "provider": "Alibaba",
+            "status": "active",
+        },
+    ]
+
+    # Override dependency
+    app.dependency_overrides[get_model_service] = lambda: mock_service
+
+    try:
+        response = client.get("/api/models")
+    finally:
+        # Clean up override
+        app.dependency_overrides.clear()
 
     assert response.status_code == 200
     data = response.json()
@@ -47,7 +100,31 @@ def test_get_models_contains_expected_models(client: TestClient):
 
 def test_get_models_only_active_models(client: TestClient):
     """Test GET /api/models only returns active models by default"""
-    response = client.get("/api/models")
+    # Mock model service with only active models
+    mock_service = Mock()
+    mock_service.list_models.return_value = [
+        {
+            "model_id": "llama-3-1-8b",
+            "name": "Llama 3.1 8B",
+            "provider": "Meta",
+            "status": "active",
+        },
+        {
+            "model_id": "qwen-2-5-7b",
+            "name": "Qwen 2.5 7B",
+            "provider": "Alibaba",
+            "status": "active",
+        },
+    ]
+
+    # Override dependency
+    app.dependency_overrides[get_model_service] = lambda: mock_service
+
+    try:
+        response = client.get("/api/models")
+    finally:
+        # Clean up override
+        app.dependency_overrides.clear()
 
     assert response.status_code == 200
     data = response.json()
