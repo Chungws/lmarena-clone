@@ -19,7 +19,7 @@ import type {
 export async function createSession(
   prompt: string
 ): Promise<CreateSessionResponse> {
-  return apiClient.post<CreateSessionResponse>("/api/sessions", { prompt });
+  return await apiClient.post<CreateSessionResponse>("/api/sessions", { prompt });
 }
 
 /**
@@ -29,7 +29,7 @@ export async function createBattle(
   sessionId: string,
   prompt: string
 ): Promise<CreateBattleResponse> {
-  return apiClient.post<CreateBattleResponse>(
+  return await apiClient.post<CreateBattleResponse>(
     `/api/sessions/${sessionId}/battles`,
     { prompt }
   );
@@ -42,7 +42,7 @@ export async function sendFollowUp(
   battleId: string,
   prompt: string
 ): Promise<SendFollowUpResponse> {
-  return apiClient.post<SendFollowUpResponse>(
+  return await apiClient.post<SendFollowUpResponse>(
     `/api/battles/${battleId}/messages`,
     { prompt }
   );
@@ -55,7 +55,7 @@ export async function submitVote(
   battleId: string,
   vote: VoteOption
 ): Promise<VoteResponse> {
-  return apiClient.post<VoteResponse>(`/api/battles/${battleId}/vote`, {
+  return await apiClient.post<VoteResponse>(`/api/battles/${battleId}/vote`, {
     vote,
   });
 }
