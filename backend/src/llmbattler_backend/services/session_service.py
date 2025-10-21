@@ -6,15 +6,14 @@ import asyncio
 import logging
 import random
 import uuid
-from datetime import datetime
-from typing import Dict, List
+from datetime import UTC, datetime
+from typing import Dict
 
 from llmbattler_shared.models import Battle, Session
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
 
 from .llm_client import get_llm_client
-from .model_service import ModelConfig, get_model_service
+from .model_service import get_model_service
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +50,8 @@ async def create_session_with_battle(
         session_id=session_id,
         title=prompt[:200],  # Use first 200 chars as title
         user_id=None,  # Anonymous in MVP
-        created_at=datetime.utcnow(),
-        last_active_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        last_active_at=datetime.now(UTC),
     )
     db.add(session)
     await db.flush()  # Get session.id
@@ -104,7 +103,7 @@ async def create_session_with_battle(
         {
             "role": "user",
             "content": prompt,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         },
         {
             "role": "assistant",
@@ -112,7 +111,7 @@ async def create_session_with_battle(
             "position": "left",
             "content": left_response.content,
             "latency_ms": left_response.latency_ms,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         },
         {
             "role": "assistant",
@@ -120,7 +119,7 @@ async def create_session_with_battle(
             "position": "right",
             "content": right_response.content,
             "latency_ms": right_response.latency_ms,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         },
     ]
 
@@ -131,8 +130,8 @@ async def create_session_with_battle(
         right_model_id=right_model.id,
         conversation=conversation,
         status="ongoing",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
     )
     db.add(battle)
 
