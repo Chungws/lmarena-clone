@@ -15,6 +15,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "llmbattler-shared",
     "pyyaml>=6.0.2",
+    "greenlet>=3.2.4",
 ]
 
 [project.optional-dependencies]

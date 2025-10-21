@@ -40,7 +40,7 @@ def upgrade() -> None:
         sa.Column('session_id', sa.String(length=50), nullable=False),
         sa.Column('left_model_id', sa.String(length=255), nullable=False),
         sa.Column('right_model_id', sa.String(length=255), nullable=False),
-        sa.Column('conversation', postgresql.JSONB(), nullable=False, server_default="'[]'::jsonb"),
+        sa.Column('conversation', postgresql.JSONB(), nullable=False, server_default=sa.text("'[]'::jsonb")),
         sa.Column('status', sa.String(length=20), nullable=False, server_default='ongoing'),
         sa.Column('created_at', sa.TIMESTAMP(), server_default=sa.text('NOW()'), nullable=False),
         sa.Column('updated_at', sa.TIMESTAMP(), server_default=sa.text('NOW()'), nullable=False),
