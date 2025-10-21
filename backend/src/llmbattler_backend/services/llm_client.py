@@ -124,14 +124,9 @@ class OpenAILLMClient(LLMClientInterface):
 
             content = response.choices[0].message.content or ""
 
-            logger.info(
-                f"LLM API call successful: model={model_config.id}, "
-                f"latency={latency_ms}ms"
-            )
+            logger.info(f"LLM API call successful: model={model_config.id}, latency={latency_ms}ms")
 
-            return LLMResponse(
-                content=content, latency_ms=latency_ms, model_id=model_config.id
-            )
+            return LLMResponse(content=content, latency_ms=latency_ms, model_id=model_config.id)
 
         except Exception as e:
             latency_ms = int((time.time() - start_time) * 1000)
