@@ -61,9 +61,14 @@ class Settings(BaseSettings):
     initial_elo: int = 1500
     k_factor: int = 32
 
-    # PostgreSQL connection pool settings
+    # PostgreSQL connection pool settings (Backend API)
     postgres_pool_size: int = 5
-    postgres_max_overflow: int = 10
+    postgres_max_overflow: int = 5  # Total max: 5 + 5 = 10 connections
+
+    # PostgreSQL connection pool settings (Worker)
+    worker_pool_size: int = 2
+    worker_max_overflow: int = 3  # Total max: 2 + 3 = 5 connections
+    worker_pool_timeout: int = 10  # Connection timeout in seconds
 
 
 # Singleton instance

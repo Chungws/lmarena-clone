@@ -110,19 +110,27 @@ for vote in votes:
   - Debugging: Error messages stored in `error_message` field
 
 ### Database Connection (Worker)
-**Decision:** Async PostgreSQL with connection pooling
+**Decision:** Shared database module with separate connection pools
 ```python
-# PostgreSQL (databases + asyncpg)
-from databases import Database
+# shared/src/llmbattler_shared/database.py
+# Central database code shared by backend and worker
 
-POSTGRES_URI = os.getenv("DATABASE_URL", "postgresql://localhost/llmbattler")
-database = Database(
-    POSTGRES_URI,
-    min_size=2,      # Worker typically uses fewer connections
-    max_size=5,
-    timeout=10
+# Backend database (higher concurrency for API requests)
+backend_engine, backend_session_maker = _create_engine_and_session_maker(
+    pool_size=settings.postgres_pool_size,      # 5
+    max_overflow=settings.postgres_max_overflow, # 5 (total: 10)
+)
+
+# Worker database (lower concurrency for batch operations)
+worker_engine, worker_session_maker = _create_engine_and_session_maker(
+    pool_size=settings.worker_pool_size,        # 2
+    max_overflow=settings.worker_max_overflow,  # 3 (total: 5)
+    pool_timeout=settings.worker_pool_timeout,  # 10 seconds
 )
 ```
+- **Why shared module:** Eliminates code duplication, centralized configuration
+- **Separate engines:** Backend and worker use different connection pools with appropriate sizing
+- **Re-export pattern:** Both `backend/database.py` and `worker/database.py` re-export from shared
 - **Note:** Worker uses ONLY PostgreSQL (no MongoDB)
 
 ### Error Logging (Worker)
@@ -155,11 +163,12 @@ database = Database(
 ### Phase 2.2: Worker - ELO Calculation
 
 **Tasks:**
-- [x] Set up worker project structure (`worker/src/llmbattler_worker/`) - **PR #TBD (2025-01-21)**
-- [x] Setup database connection - **PR #TBD (2025-01-21)**
-  - [x] PostgreSQL async client (databases + asyncpg)
-  - [x] Connection pooling configuration
-- [x] Setup logging (Python logging to stdout) - **PR #TBD (2025-01-21)**
+- [x] Set up worker project structure (`worker/src/llmbattler_worker/`) - **PR #24 (2025-01-21)**
+- [x] Setup database connection - **PR #24 (2025-01-21)**
+  - [x] PostgreSQL async client (SQLAlchemy AsyncSession)
+  - [x] Connection pooling configuration (pool_size=2, max_overflow=3)
+  - [x] Shared database module (`llmbattler_shared.database`) with separate engines for backend/worker
+- [x] Setup logging (Python logging to stdout) - **PR #24 (2025-01-21)**
 - [ ] Create vote aggregation script
   - [ ] Read pending votes from PostgreSQL (`processing_status = 'pending'`)
   - [ ] Calculate ELO ratings using vote results
