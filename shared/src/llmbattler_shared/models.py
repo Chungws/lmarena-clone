@@ -5,8 +5,8 @@ SQLModel models for PostgreSQL (shared between backend and worker)
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlmodel import Column, Field, SQLModel
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Column, Field, SQLModel
 
 
 class Session(SQLModel, table=True):
