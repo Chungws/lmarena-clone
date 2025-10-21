@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useBattle } from "./use-battle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,13 +56,24 @@ export default function BattleClient() {
   };
 
   // Get left and right messages from conversation
-  const leftMessages = state.conversation.filter(
-    (msg) => msg.role === "assistant" && msg.position === "left"
+  const leftMessages = useMemo(
+    () =>
+      state.conversation.filter(
+        (msg) => msg.role === "assistant" && msg.position === "left"
+      ),
+    [state.conversation]
   );
-  const rightMessages = state.conversation.filter(
-    (msg) => msg.role === "assistant" && msg.position === "right"
+  const rightMessages = useMemo(
+    () =>
+      state.conversation.filter(
+        (msg) => msg.role === "assistant" && msg.position === "right"
+      ),
+    [state.conversation]
   );
-  const userMessages = state.conversation.filter((msg) => msg.role === "user");
+  const userMessages = useMemo(
+    () => state.conversation.filter((msg) => msg.role === "user"),
+    [state.conversation]
+  );
 
   return (
     <div className="min-h-screen p-4 md:p-8">
