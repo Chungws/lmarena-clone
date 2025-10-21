@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.get("/models", response_model=ModelsListResponse)
 async def get_models(
-    model_service: ModelService = Depends(get_model_service)
+    model_service: ModelService = Depends(get_model_service),
 ) -> ModelsListResponse:
     """
     Get list of available models

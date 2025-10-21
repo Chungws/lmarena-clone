@@ -15,7 +15,7 @@ from llmbattler_backend.api import models
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()]
+    handlers=[logging.StreamHandler()],
 )
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ app = FastAPI(
     title="llmbattler API",
     description="AI Language Model Battle Arena - Backend API",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add CORS middleware

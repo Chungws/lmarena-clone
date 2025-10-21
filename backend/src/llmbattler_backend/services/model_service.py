@@ -20,6 +20,7 @@ class ModelConfig:
 
     Loaded from config/models.yaml
     """
+
     def __init__(self, config_dict: Dict):
         self.id: str = config_dict["id"]
         self.name: str = config_dict["name"]
@@ -53,7 +54,7 @@ class ModelConfig:
             model_id=self.id,
             name=self.name,
             provider=self.organization,
-            status=self.status  # type: ignore
+            status=self.status,  # type: ignore
         )
 
 
@@ -63,6 +64,7 @@ class ModelService:
 
     Loads and manages model configurations from YAML file
     """
+
     def __init__(self, config_path: Optional[str] = None):
         """
         Initialize model service

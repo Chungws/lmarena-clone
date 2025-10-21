@@ -20,6 +20,7 @@ class LLMResponse:
 
     Contains response text and metadata
     """
+
     def __init__(self, content: str, latency_ms: int, model_id: str):
         self.content = content
         self.latency_ms = latency_ms
@@ -37,6 +38,7 @@ class LLMClient:
     - vLLM (custom endpoint)
     - Any endpoint exposing /v1/chat/completions
     """
+
     def __init__(self):
         """
         Initialize LLM client with timeout and retry settings
@@ -45,7 +47,7 @@ class LLMClient:
             connect=settings.llm_connect_timeout,
             read=settings.llm_read_timeout,
             write=settings.llm_write_timeout,
-            pool=settings.llm_pool_timeout
+            pool=settings.llm_pool_timeout,
         )
         self.retry_attempts = settings.llm_retry_attempts
         self.retry_backoff_base = settings.llm_retry_backoff_base
@@ -100,11 +102,7 @@ class LLMClient:
                     f"latency={latency_ms}ms, attempt={attempt + 1}"
                 )
 
-                return LLMResponse(
-                    content=content,
-                    latency_ms=latency_ms,
-                    model_id=model_config.id
-                )
+                return LLMResponse(content=content, latency_ms=latency_ms, model_id=model_config.id)
 
             except (httpx.HTTPError, KeyError, IndexError) as e:
                 last_error = e
@@ -115,7 +113,7 @@ class LLMClient:
 
                 # Exponential backoff (1s, 2s, 4s)
                 if attempt < self.retry_attempts - 1:
-                    backoff_delay = self.retry_backoff_base * (2 ** attempt)
+                    backoff_delay = self.retry_backoff_base * (2**attempt)
                     logger.info(f"Retrying in {backoff_delay}s...")
                     time.sleep(backoff_delay)
 
