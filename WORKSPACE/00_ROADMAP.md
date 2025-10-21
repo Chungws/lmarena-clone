@@ -180,8 +180,21 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 
 ### ⏳ Phase 2: MVP - Leaderboard
 
-**Status:** Not Started
+**Status:** 🔄 In Progress (Phase 2.2 - ELO Calculation Complete)
 **Goal:** Display ELO-based rankings for all models
+
+**Progress:**
+- ✅ **Phase 2.1: PostgreSQL Schema** - **PR #24 (2025-10-21)**
+  - Tables created: sessions, battles, votes, model_stats, worker_status
+  - Indexes added for fast queries
+  - Schema tests written
+- ✅ **Phase 2.2: Worker ELO Calculation (Core Logic)** - **PR #XX (2025-10-21)**
+  - ELO calculator module with Bradley-Terry CI
+  - Vote aggregation script with error handling
+  - 24 comprehensive tests (17 unit + 7 integration)
+- ⏳ **Phase 2.2: Scheduler Integration** - Pending next PR
+  - Connect APScheduler to ELO aggregator
+  - Worker status tracking
 
 **Key Features:**
 1. **Leaderboard UI (Frontend)**
