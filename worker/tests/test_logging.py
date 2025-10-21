@@ -13,16 +13,16 @@ class TestLoggingConfiguration:
     def test_setup_logging_creates_logger(self):
         """Test that setup_logging creates a logger"""
         # Act
-        logger = setup_logging()
+        logger = setup_logging("test_logger_1")
 
         # Assert
         assert isinstance(logger, logging.Logger)
-        assert logger.name == "llmbattler_worker"
+        assert logger.name == "test_logger_1"
 
     def test_setup_logging_sets_log_level(self):
         """Test that setup_logging sets INFO level by default"""
         # Act
-        logger = setup_logging()
+        logger = setup_logging("test_logger_2")
 
         # Assert
         assert logger.level == logging.INFO
@@ -30,7 +30,7 @@ class TestLoggingConfiguration:
     def test_setup_logging_adds_stream_handler(self):
         """Test that setup_logging adds StreamHandler (stdout)"""
         # Act
-        logger = setup_logging()
+        logger = setup_logging("test_logger_3")
 
         # Assert
         # Should have at least one handler
@@ -43,7 +43,7 @@ class TestLoggingConfiguration:
     def test_setup_logging_uses_correct_format(self):
         """Test that log messages use correct format"""
         # Act
-        logger = setup_logging()
+        logger = setup_logging("test_logger_4")
 
         # Assert
         # Get the first StreamHandler
@@ -66,7 +66,7 @@ class TestLoggingConfiguration:
         monkeypatch.setenv("LOG_LEVEL", "DEBUG")
 
         # Act
-        logger = setup_logging()
+        logger = setup_logging("test_logger_5")
 
         # Assert
         assert logger.level == logging.DEBUG

@@ -134,10 +134,20 @@ worker_engine, worker_session_maker = _create_engine_and_session_maker(
 - **Note:** Worker uses ONLY PostgreSQL (no MongoDB)
 
 ### Error Logging (Worker)
-**Decision:** Python logging to stdout
-- Same strategy as Backend
-- Log levels: INFO (aggregation start/complete), ERROR (failures)
-- Key events: Worker start, votes processed, ELO updates, database errors
+**Decision:** Shared logging module with Python logging to stdout
+```python
+# shared/src/llmbattler_shared/logging_config.py
+# Central logging configuration shared by backend and worker
+
+def setup_logging(logger_name: str = "llmbattler") -> logging.Logger:
+    """Setup logging with stdout handler and standardized format"""
+    # Format: [YYYY-MM-DD HH:MM:SS] [LEVEL] message
+    # LOG_LEVEL environment variable support (default: INFO)
+```
+- **Why shared module:** Consistent logging across backend and worker
+- **Re-export pattern:** Both `backend/main.py` and `worker/logging_config.py` use shared
+- **Log levels:** INFO (normal operations), ERROR (failures)
+- **Docker-compatible:** Logs to stdout for container log collection
 
 ---
 
@@ -169,6 +179,7 @@ worker_engine, worker_session_maker = _create_engine_and_session_maker(
   - [x] Connection pooling configuration (pool_size=2, max_overflow=3)
   - [x] Shared database module (`llmbattler_shared.database`) with separate engines for backend/worker
 - [x] Setup logging (Python logging to stdout) - **PR #24 (2025-01-21)**
+  - [x] Shared logging module (`llmbattler_shared.logging_config`) for consistent logging across backend/worker
 - [ ] Create vote aggregation script
   - [ ] Read pending votes from PostgreSQL (`processing_status = 'pending'`)
   - [ ] Calculate ELO ratings using vote results

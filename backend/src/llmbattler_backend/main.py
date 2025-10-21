@@ -2,23 +2,17 @@
 FastAPI application entry point
 """
 
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from llmbattler_shared.config import settings
+from llmbattler_shared.logging_config import setup_logging
 
 from llmbattler_backend.api import battles, models, sessions
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()],
-)
-
-logger = logging.getLogger(__name__)
+logger = setup_logging("llmbattler_backend")
 
 
 @asynccontextmanager
