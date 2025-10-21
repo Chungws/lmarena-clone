@@ -361,14 +361,24 @@ Response:
 
 ---
 
-### Phase 2.5: Frontend - API Integration
+### Phase 2.5: Frontend - API Integration ✅
+
+**Status:** ✅ Completed - **Merged into Phase 2.4 (2025-10-21)**
+
+**Note:** This phase was completed as part of Phase 2.4. All API integration tasks were implemented together with the UI for better cohesion.
 
 **Tasks:**
-- [ ] Create API client service (`src/lib/api/leaderboard.ts`)
-  - [ ] `getLeaderboard(sortBy?, order?)`
-- [ ] Create custom hook `useLeaderboard()`
-- [ ] Handle loading and error states
-- [ ] Add TypeScript types for API responses
+- [x] Create API client service (`app/leaderboard/service.ts`)
+  - [x] `getLeaderboard(sortBy?, order?)`
+- [x] Create custom hook `useLeaderboard()`
+- [x] Handle loading and error states
+- [x] Add TypeScript types for API responses (`_types.ts`)
+
+**Implementation Details:**
+- API service: `frontend/app/leaderboard/service.ts`
+- Custom hook: `frontend/app/leaderboard/use-leaderboard.ts`
+- TypeScript types: `frontend/app/leaderboard/_types.ts`
+- All integrated in PR #30
 
 ---
 
