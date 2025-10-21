@@ -39,7 +39,7 @@ export const apiClient = {
       },
     });
 
-    return handleResponse<T>(response);
+    return await handleResponse<T>(response);
   },
 
   async post<T>(path: string, data?: unknown): Promise<T> {
@@ -51,7 +51,7 @@ export const apiClient = {
       body: data ? JSON.stringify(data) : undefined,
     });
 
-    return handleResponse<T>(response);
+    return await handleResponse<T>(response);
   },
 
   async put<T>(path: string, data?: unknown): Promise<T> {
@@ -63,7 +63,7 @@ export const apiClient = {
       body: data ? JSON.stringify(data) : undefined,
     });
 
-    return handleResponse<T>(response);
+    return await handleResponse<T>(response);
   },
 
   async delete<T>(path: string): Promise<T> {
@@ -74,7 +74,7 @@ export const apiClient = {
       },
     });
 
-    return handleResponse<T>(response);
+    return await handleResponse<T>(response);
   },
 };
 
