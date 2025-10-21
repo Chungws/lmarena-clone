@@ -40,7 +40,7 @@ class Battle(SQLModel, table=True):
     right_model_id: str = Field(max_length=255)
     conversation: List[Dict[str, Any]] = Field(
         default_factory=list,
-        sa_column=Column(JSONB, nullable=False, server_default="'[]'::jsonb")
+        sa_column=Column(JSONB, nullable=False, server_default="[]")
     )
     status: str = Field(default="ongoing", max_length=20, index=True)  # ongoing, voted, abandoned
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
