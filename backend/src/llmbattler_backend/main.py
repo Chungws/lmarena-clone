@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from llmbattler_shared.config import settings
 from llmbattler_shared.logging_config import setup_logging
 
-from llmbattler_backend.api import battles, models, sessions
+from llmbattler_backend.api import battles, leaderboard, models, sessions
 from llmbattler_backend.services.llm_client import (
     MockLLMClient,
     OpenAILLMClient,
@@ -77,7 +77,4 @@ async def health_check():
 app.include_router(models.router, prefix="/api", tags=["models"])
 app.include_router(sessions.router, prefix="/api", tags=["sessions"])
 app.include_router(battles.router, prefix="/api", tags=["battles"])
-
-# TODO: Include other routers
-# from llmbattler_backend.api import leaderboard
-# app.include_router(leaderboard.router, prefix="/api", tags=["leaderboard"])
+app.include_router(leaderboard.router, prefix="/api", tags=["leaderboard"])
