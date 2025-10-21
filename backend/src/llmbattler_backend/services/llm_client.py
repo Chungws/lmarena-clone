@@ -3,10 +3,13 @@ LLM API client with Adapter pattern for multiple providers
 
 Supports:
 - OpenAI-compatible endpoints (OpenAI, Ollama, vLLM, etc.)
+- Mock client for testing and development
 - Future: Anthropic native, Gemini, VertexAI, etc.
 """
 
+import asyncio
 import logging
+import random
 import time
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
@@ -138,19 +141,70 @@ class OpenAILLMClient(LLMClientInterface):
             raise Exception(error_msg)
 
 
-# Singleton instance
+class MockLLMClient(LLMClientInterface):
+    """
+    Mock LLM client for testing and development
+
+    Returns deterministic responses without external API calls.
+    Simulates realistic latency (100-300ms) for testing.
+    """
+
+    async def chat_completion(
+        self,
+        model_config: ModelConfig,
+        messages: List[Dict[str, str]],
+    ) -> LLMResponse:
+        """
+        Return mock response based on model and prompt
+
+        Args:
+            model_config: Model configuration
+            messages: Conversation history in OpenAI format
+
+        Returns:
+            LLMResponse with mock content and simulated latency
+        """
+        start_time = time.time()
+
+        # Simulate API latency (100-300ms)
+        latency_ms = random.randint(100, 300)
+        await asyncio.sleep(latency_ms / 1000)
+
+        # Extract last user message
+        last_user_msg = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+
+        # Generate deterministic mock response
+        mock_content = (
+            f"This is a mock response from {model_config.id}.\n\n"
+            f"You asked: {last_user_msg[:100]}{'...' if len(last_user_msg) > 100 else ''}\n\n"
+            f"In a real scenario, this would be an actual LLM response."
+        )
+
+        actual_latency_ms = int((time.time() - start_time) * 1000)
+
+        logger.info(
+            f"Mock LLM call successful: model={model_config.id}, "
+            f"latency={actual_latency_ms}ms, message_count={len(messages)}"
+        )
+
+        return LLMResponse(
+            content=mock_content, latency_ms=actual_latency_ms, model_id=model_config.id
+        )
+
+
+# Singleton instance (mutable for dependency injection)
 _llm_client: Optional[LLMClientInterface] = None
 
 
 def get_llm_client() -> LLMClientInterface:
     """
-    Get singleton LLM client instance
+    Get LLM client instance (singleton)
 
-    Factory function: can be extended to support multiple providers
-    based on configuration
+    Factory function that returns appropriate client based on configuration.
+    Can be overridden for testing via set_llm_client()
 
     Returns:
-        LLMClientInterface implementation (currently OpenAILLMClient)
+        LLMClientInterface implementation
 
     Future:
         # Based on config, return different implementations
@@ -163,6 +217,38 @@ def get_llm_client() -> LLMClientInterface:
     """
     global _llm_client
     if _llm_client is None:
-        # Currently only OpenAI-compatible provider
+        # Default to OpenAI-compatible client
         _llm_client = OpenAILLMClient()
     return _llm_client
+
+
+def set_llm_client(client: LLMClientInterface) -> None:
+    """
+    Override LLM client instance (dependency injection)
+
+    Allows injecting mock or alternative implementations for testing/development.
+
+    Args:
+        client: LLMClientInterface implementation to use
+
+    Example:
+        # In tests or dev mode
+        set_llm_client(MockLLMClient())
+
+        # In production
+        set_llm_client(OpenAILLMClient())
+    """
+    global _llm_client
+    _llm_client = client
+    logger.info(f"LLM client set to: {client.__class__.__name__}")
+
+
+def reset_llm_client() -> None:
+    """
+    Reset LLM client to None (forces re-initialization)
+
+    Useful for testing to ensure clean state between test runs.
+    """
+    global _llm_client
+    _llm_client = None
+    logger.debug("LLM client reset")

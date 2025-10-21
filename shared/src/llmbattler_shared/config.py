@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     llm_retry_attempts: int = 3
     llm_retry_backoff_base: float = 1.0  # Base delay in seconds (1s, 2s, 4s)
 
+    # LLM Mock Mode (for development and testing)
+    use_mock_llm: bool = False  # Set to True to use mock LLM client instead of real API calls
+
     # Battle settings
     max_follow_ups: int = 5  # Maximum 5 follow-ups (6 total messages)
 

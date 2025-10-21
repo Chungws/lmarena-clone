@@ -10,6 +10,11 @@ from llmbattler_shared.config import settings
 from llmbattler_shared.logging_config import setup_logging
 
 from llmbattler_backend.api import battles, models, sessions
+from llmbattler_backend.services.llm_client import (
+    MockLLMClient,
+    OpenAILLMClient,
+    set_llm_client,
+)
 
 # Configure logging
 logger = setup_logging("llmbattler_backend")
@@ -19,6 +24,14 @@ logger = setup_logging("llmbattler_backend")
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     logger.info("Starting llmbattler-backend...")
+
+    # Initialize LLM client based on configuration
+    if settings.use_mock_llm:
+        logger.info("🎭 Using Mock LLM client (development/testing mode)")
+        set_llm_client(MockLLMClient())
+    else:
+        logger.info("🚀 Using OpenAI-compatible LLM client (production mode)")
+        set_llm_client(OpenAILLMClient())
 
     # TODO: Initialize database connections
     # - MongoDB (Motor)

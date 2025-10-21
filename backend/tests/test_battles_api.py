@@ -310,13 +310,15 @@ def test_vote_on_battle_success(client: TestClient):
         updated_at=datetime.now(UTC),
     )
 
-    with patch(
-        "llmbattler_backend.services.session_service.BattleRepository"
-    ) as mock_battle_repo_class, patch(
-        "llmbattler_backend.services.session_service.SessionRepository"
-    ) as mock_session_repo_class, patch(
-        "llmbattler_backend.services.session_service.VoteRepository"
-    ) as mock_vote_repo_class:
+    with (
+        patch(
+            "llmbattler_backend.services.session_service.BattleRepository"
+        ) as mock_battle_repo_class,
+        patch(
+            "llmbattler_backend.services.session_service.SessionRepository"
+        ) as mock_session_repo_class,
+        patch("llmbattler_backend.services.session_service.VoteRepository") as mock_vote_repo_class,
+    ):
         # Mock repositories
         mock_battle_repo = AsyncMock()
         mock_session_repo = AsyncMock()
