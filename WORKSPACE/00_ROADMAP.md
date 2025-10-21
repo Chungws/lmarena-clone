@@ -121,7 +121,11 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 - 🔄 **Phase 1.1: Session & Battle Creation API** - **In Progress**
   - ✅ SQLModel models (Session, Battle, Vote) - **PR #18 (2025-01-21)**
   - ✅ Alembic migration for database tables - **PR #18 (2025-01-21)**
-  - ⏳ POST /api/sessions endpoint (pending)
+  - ✅ POST /api/sessions endpoint (Part 1) - **PR #19 (2025-01-21)**
+    - Session creation with first battle
+    - Repository pattern implementation
+    - Timezone-aware timestamps (TIMESTAMPTZ)
+    - Comprehensive tests (7/7 passing)
   - ⏳ POST /api/sessions/{session_id}/battles endpoint (pending)
   - ⏳ POST /api/battles/{battle_id}/messages endpoint (pending)
 
