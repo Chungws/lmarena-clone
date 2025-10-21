@@ -155,11 +155,11 @@ database = Database(
 ### Phase 2.2: Worker - ELO Calculation
 
 **Tasks:**
-- [ ] Set up worker project structure (`worker/src/llmbattler_worker/`)
-- [ ] Setup database connection
-  - [ ] PostgreSQL async client (databases + asyncpg)
-  - [ ] Connection pooling configuration
-- [ ] Setup logging (Python logging to stdout)
+- [x] Set up worker project structure (`worker/src/llmbattler_worker/`) - **PR #TBD (2025-01-21)**
+- [x] Setup database connection - **PR #TBD (2025-01-21)**
+  - [x] PostgreSQL async client (databases + asyncpg)
+  - [x] Connection pooling configuration
+- [x] Setup logging (Python logging to stdout) - **PR #TBD (2025-01-21)**
 - [ ] Create vote aggregation script
   - [ ] Read pending votes from PostgreSQL (`processing_status = 'pending'`)
   - [ ] Calculate ELO ratings using vote results
