@@ -16,6 +16,7 @@ dependencies = [
     "llmbattler-shared",
     "pyyaml>=6.0.2",
     "greenlet>=3.2.4",
+    "openai>=2.6.0",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +38,7 @@ pythonpath = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+exclude = ["alembic/"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
@@ -48,6 +50,7 @@ ignore = ["E501"]
 [tool.isort]
 profile = "black"
 line_length = 100
+skip_glob = ["alembic/*"]
 
 [build-system]
 requires = ["hatchling"]
