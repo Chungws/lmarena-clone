@@ -177,14 +177,14 @@ export default function LeaderboardClient() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[80px]">Rank</TableHead>
+                      <TableHead className="w-[80px] text-center">Rank</TableHead>
                       <TableHead>Model</TableHead>
-                      <TableHead className="text-right">Score</TableHead>
-                      <TableHead className="text-right">95% CI</TableHead>
-                      <TableHead className="text-right">Votes</TableHead>
-                      <TableHead className="text-right">Win Rate</TableHead>
-                      <TableHead>Organization</TableHead>
-                      <TableHead>License</TableHead>
+                      <TableHead className="text-center">Score</TableHead>
+                      <TableHead className="text-center">95% CI</TableHead>
+                      <TableHead className="text-center">Votes</TableHead>
+                      <TableHead className="text-center">Win Rate</TableHead>
+                      <TableHead className="text-center">Organization</TableHead>
+                      <TableHead className="text-center">License</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -201,7 +201,7 @@ export default function LeaderboardClient() {
                     ) : (
                       entries.map((entry) => (
                         <TableRow key={entry.model_id}>
-                          <TableCell className="font-medium">
+                          <TableCell className="text-center font-medium">
                             {entry.rank}
                           </TableCell>
                           <TableCell>
@@ -214,22 +214,22 @@ export default function LeaderboardClient() {
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right font-semibold">
+                          <TableCell className="text-center font-semibold">
                             {entry.elo_score}
                           </TableCell>
-                          <TableCell className="text-right text-muted-foreground">
+                          <TableCell className="text-center text-muted-foreground">
                             ±{entry.elo_ci.toFixed(1)}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-center">
                             {entry.vote_count.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-center">
                             {(entry.win_rate * 100).toFixed(1)}%
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
                             <Badge variant="secondary">{entry.organization}</Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
                             <Badge
                               variant={
                                 entry.license === "proprietary"
