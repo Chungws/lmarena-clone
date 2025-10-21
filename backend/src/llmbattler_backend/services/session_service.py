@@ -524,12 +524,18 @@ async def vote_on_battle(
     logger.info(f"Vote record created: {vote_id}")
 
     # 3. Update battle status to 'voted'
-    await battle_repo.update(battle.id, {"status": "voted"})
+    battle.status = "voted"
+    await battle_repo.update(battle)
     logger.info(f"Battle status updated to 'voted': {battle_id}")
 
     # 4. Update session last_active_at
-    await session_repo.update_last_active_at(battle.session_id)
-    logger.info(f"Session last_active_at updated: {battle.session_id}")
+    session = await session_repo.get_by_session_id(battle.session_id)
+    if session:
+        session.last_active_at = datetime.now(UTC)
+        await session_repo.update(session)
+        logger.info(f"Session last_active_at updated: {battle.session_id}")
+    else:
+        logger.warning(f"Session not found for updating last_active_at: {battle.session_id}")
 
     # 5. Return vote confirmation with revealed models
     return {
