@@ -9,6 +9,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from llmbattler_shared.config import settings
 
+from llmbattler_backend.api import models
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -64,8 +66,10 @@ async def health_check():
     return {"status": "healthy", "service": "llmbattler-backend"}
 
 
-# TODO: Include routers
-# from llmbattler_backend.api import battles, models, leaderboard
+# Include API routers
+app.include_router(models.router, prefix="/api", tags=["models"])
+
+# TODO: Include other routers
+# from llmbattler_backend.api import battles, leaderboard
 # app.include_router(battles.router, prefix="/api", tags=["battles"])
-# app.include_router(models.router, prefix="/api", tags=["models"])
 # app.include_router(leaderboard.router, prefix="/api", tags=["leaderboard"])

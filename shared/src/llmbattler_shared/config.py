@@ -34,7 +34,7 @@ class Settings(BaseSettings):
         """Parse CORS origins from comma-separated string"""
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
-    # Model configuration
+    # Model configuration (relative to project root)
     models_config_path: str = "config/models.yaml"
 
     # Worker settings
