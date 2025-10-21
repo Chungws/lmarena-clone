@@ -320,18 +320,28 @@ Response:
 
 ---
 
-### Phase 2.4: Frontend - Leaderboard UI
+### Phase 2.4: Frontend - Leaderboard UI ✅
+
+**Status:** Completed - **PR #TBD (2025-10-21)**
 
 **Tasks:**
-- [ ] Create `/leaderboard` page (Next.js App Router)
-- [ ] Implement leaderboard table
-  - [ ] Columns: Rank, Model Name, Score (ELO), 95% CI, Votes, Organization, License
-  - [ ] Use shadcn/ui Table component
-  - [ ] Add sorting functionality (client-side or server-side)
-  - [ ] Add search/filter by model name
-- [ ] Display metadata (Total Votes, Total Models, Last Updated)
-- [ ] Add responsive design (mobile-friendly)
-- [ ] Add loading and error states
+- [x] Create `/leaderboard` page (Next.js App Router)
+- [x] Implement leaderboard table
+  - [x] Columns: Rank, Model Name, Score (ELO), 95% CI, Votes, Win Rate, Organization, License
+  - [x] Use shadcn/ui Table component
+  - [x] Add sorting functionality (ELO Score, Vote Count, Organization)
+  - [x] Add search/filter by model name, ID, and organization
+- [x] Display metadata (Total Votes, Total Models, Last Updated with relative time)
+- [x] Add responsive design (mobile-friendly with horizontal scroll)
+- [x] Add loading and error states
+
+**Implementation Details:**
+- Created TypeScript types (`_types.ts`)
+- API service layer (`service.ts`)
+- Custom React hook (`use-leaderboard.ts`) with sorting and client-side filtering
+- Leaderboard client component with shadcn/ui components (Table, Input, Select, Badge)
+- Dynamic Rank calculation after sorting
+- RSC pattern: `page.tsx` (server) + `leaderboard-client.tsx` (client)
 
 **UI Layout:**
 ```
