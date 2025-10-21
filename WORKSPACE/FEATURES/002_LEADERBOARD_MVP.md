@@ -1,8 +1,8 @@
 # Feature: Leaderboard - MVP
 
-**Status:** In Progress (Phase 2.2 - Infrastructure Complete)
+**Status:** ✅ Completed (All Phases Complete)
 **Priority:** High (MVP Core Feature)
-**Estimated Time:** 1-2 weeks
+**Completion Date:** 2025-10-21
 
 ---
 
@@ -266,19 +266,30 @@ See [DATABASE_DESIGN.md - Worker Flow](../ARCHITECTURE/DATABASE_DESIGN.md#2-work
 
 ---
 
-### Phase 2.3: Backend - Leaderboard API
+### Phase 2.3: Backend - Leaderboard API ✅
+
+**Status:** ✅ Completed - **PR #29 (2025-10-21)**
 
 **Tasks:**
-- [ ] Setup PostgreSQL connection (already configured for battles/votes)
-  - [ ] Use same Database client as Battle API
-- [ ] Implement `GET /api/leaderboard` endpoint
-  - [ ] Query PostgreSQL `model_stats` table
-  - [ ] **Filter out models with < 5 votes** (minimum vote requirement)
-  - [ ] Support sorting (by score, votes, organization)
-  - [ ] Support filtering (by category - optional for MVP)
-  - [ ] Return rankings with metadata (total models, total votes, last updated)
-- [ ] Add pagination (optional for MVP)
-- [ ] Write tests for leaderboard API (including minimum vote filter)
+- [x] Setup PostgreSQL connection (shared with Battle API)
+- [x] Implement `GET /api/leaderboard` endpoint
+  - [x] Query PostgreSQL `model_stats` table via LeaderboardService
+  - [x] **Filter out models with < 5 votes** (minimum vote requirement)
+  - [x] Sorting by ELO score descending (default)
+  - [x] Return rankings with metadata (total models, total votes, last updated)
+- [x] Implement LeaderboardService for business logic
+- [x] Write comprehensive tests for leaderboard API
+  - [x] test_get_leaderboard_success
+  - [x] test_get_leaderboard_empty_database
+  - [x] test_get_leaderboard_all_below_threshold
+  - [x] test_get_leaderboard_sorting_by_elo
+  - [x] test_get_leaderboard_metadata_accuracy
+
+**Implementation Details:**
+- API Router: `backend/src/llmbattler_backend/api/leaderboard.py`
+- Service Layer: `backend/src/llmbattler_backend/services/leaderboard_service.py`
+- Repository: `backend/src/llmbattler_backend/repositories/model_stats_repository.py`
+- Tests: `backend/tests/test_leaderboard_api.py` (5 tests, all passing)
 
 **API Spec:**
 ```
@@ -322,25 +333,34 @@ Response:
 
 ### Phase 2.4: Frontend - Leaderboard UI ✅
 
-**Status:** Completed - **PR #TBD (2025-10-21)**
+**Status:** ✅ Completed - **PR #31 (2025-10-21)**
 
 **Tasks:**
 - [x] Create `/leaderboard` page (Next.js App Router)
 - [x] Implement leaderboard table
   - [x] Columns: Rank, Model Name, Score (ELO), 95% CI, Votes, Win Rate, Organization, License
   - [x] Use shadcn/ui Table component
-  - [x] Add sorting functionality (ELO Score, Vote Count, Organization)
-  - [x] Add search/filter by model name, ID, and organization
+  - [x] **All columns sortable** (clickable headers with arrow indicators)
+  - [x] Add search with icon and "/" keyboard shortcut indicator
+  - [x] Client-side filtering by model name, ID, and organization
 - [x] Display metadata (Total Votes, Total Models, Last Updated with relative time)
 - [x] Add responsive design (mobile-friendly with horizontal scroll)
-- [x] Add loading and error states
+- [x] Add loading and error states (graceful empty state when backend unavailable)
+- [x] Integrate sidebar navigation (desktop + mobile)
+  - [x] Sidebar with collapse functionality
+  - [x] LLM Battler branding
+  - [x] Mobile hamburger menu with Sheet component
 
 **Implementation Details:**
-- Created TypeScript types (`_types.ts`)
-- API service layer (`service.ts`)
-- Custom React hook (`use-leaderboard.ts`) with sorting and client-side filtering
-- Leaderboard client component with shadcn/ui components (Table, Input, Select, Badge)
-- Dynamic Rank calculation after sorting
+- TypeScript types: `frontend/app/leaderboard/_types.ts`
+- API service layer: `frontend/app/leaderboard/service.ts` (with rank → elo_score mapping)
+- Custom React hook: `frontend/app/leaderboard/use-leaderboard.ts` (sorting & filtering)
+- Client component: `frontend/app/leaderboard/leaderboard-client.tsx`
+  - Clickable column headers with ArrowUp/ArrowDown/ArrowUpDown icons
+  - Search input with Search icon (left) and "/" shortcut (right)
+  - All columns sortable (default: rank ascending)
+- Sidebar components: `frontend/components/sidebar.tsx`, `frontend/components/mobile-sidebar.tsx`
+- shadcn/ui components: Table, Input, Badge, Card, Sheet, Separator
 - RSC pattern: `page.tsx` (server) + `leaderboard-client.tsx` (client)
 
 **UI Layout:**
@@ -470,15 +490,18 @@ interface WorkerStatus {
 
 ## Success Criteria
 
-- [ ] Worker runs hourly and calculates ELO ratings
-- [ ] PostgreSQL stores accurate model statistics
-- [ ] Denormalized votes table avoids N+1 queries
-- [ ] processing_status field ensures retry-safe aggregation
-- [ ] Leaderboard API returns sorted rankings
-- [ ] Frontend displays leaderboard with all columns
-- [ ] Confidence intervals displayed correctly
-- [ ] Models with < 5 votes excluded from leaderboard
-- [ ] At least 10 test battles conducted to populate leaderboard
+- [x] Worker runs hourly and calculates ELO ratings ✅
+- [x] PostgreSQL stores accurate model statistics ✅
+- [x] Denormalized votes table avoids N+1 queries ✅
+- [x] processing_status field ensures retry-safe aggregation ✅
+- [x] Leaderboard API returns sorted rankings ✅
+- [x] Frontend displays leaderboard with all columns ✅
+- [x] Confidence intervals displayed correctly ✅
+- [x] Models with < 5 votes excluded from leaderboard ✅
+- [x] All columns sortable with visual indicators ✅
+- [x] Search functionality with keyboard shortcut ✅
+- [x] Sidebar navigation integrated (desktop + mobile) ✅
+- [ ] At least 10 test battles conducted to populate leaderboard (pending test data)
 
 ---
 
@@ -499,4 +522,4 @@ interface WorkerStatus {
 - [00_ROADMAP.md](../00_ROADMAP.md) - Overall project roadmap
 - [CONVENTIONS/backend/](../CONVENTIONS/backend/) - Backend conventions
 
-**Last Updated:** 2025-10-21
+**Last Updated:** 2025-10-22
