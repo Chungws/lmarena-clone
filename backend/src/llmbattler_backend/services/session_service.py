@@ -12,6 +12,7 @@ from typing import Dict
 from llmbattler_shared.models import Battle, Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..repositories import BattleRepository, SessionRepository
 from .llm_client import get_llm_client
 from .model_service import get_model_service
 
@@ -44,6 +45,10 @@ async def create_session_with_battle(
     """
     logger.info(f"Creating session with prompt: {prompt[:50]}...")
 
+    # Initialize repositories
+    session_repo = SessionRepository(db)
+    battle_repo = BattleRepository(db)
+
     # 1. Create session
     session_id = f"session_{uuid.uuid4().hex[:12]}"
     session = Session(
@@ -53,8 +58,7 @@ async def create_session_with_battle(
         created_at=datetime.now(UTC),
         last_active_at=datetime.now(UTC),
     )
-    db.add(session)
-    await db.flush()  # Get session.id
+    session = await session_repo.create(session)
 
     logger.info(f"Session created: {session_id}")
 
@@ -133,7 +137,7 @@ async def create_session_with_battle(
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
     )
-    db.add(battle)
+    battle = await battle_repo.create(battle)
 
     # Commit both session and battle
     await db.commit()
