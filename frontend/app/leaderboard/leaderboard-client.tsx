@@ -19,8 +19,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert } from "@/components/ui/alert";
-import { ArrowUp, ArrowDown } from "lucide-react";
-import type { SortBy, SortOrder } from "./_types";
+import { ArrowUp, ArrowDown, ArrowUpDown, Search } from "lucide-react";
+import type { SortBy } from "./_types";
 
 export default function LeaderboardClient() {
   const {
@@ -42,15 +42,19 @@ export default function LeaderboardClient() {
       // Toggle order if same column
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
-      // Set new column and default to descending
+      // Set new column and always start with ascending
       setSortBy(column);
-      setSortOrder("desc");
+      setSortOrder("asc");
     }
   };
 
   // Render sort icon
   const renderSortIcon = (column: SortBy) => {
-    if (sortBy !== column) return null;
+    if (sortBy !== column) {
+      // Not currently sorted - show both arrows with low opacity
+      return <ArrowUpDown className="ml-1 h-4 w-4 inline opacity-30" />;
+    }
+    // Currently sorted - show direction arrow
     return sortOrder === "asc" ? (
       <ArrowUp className="ml-1 h-4 w-4 inline" />
     ) : (
@@ -102,14 +106,18 @@ export default function LeaderboardClient() {
         )}
 
         {/* Search Input */}
-        <div>
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="text"
             placeholder="Search by model name..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-md"
+            className="pl-9 pr-12"
           />
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+            /
+          </kbd>
         </div>
 
         {/* Error State */}
@@ -142,7 +150,12 @@ export default function LeaderboardClient() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[80px] text-center">Rank</TableHead>
+                      <TableHead
+                        className="w-[80px] text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("rank")}
+                      >
+                        Rank{renderSortIcon("rank")}
+                      </TableHead>
                       <TableHead>Model</TableHead>
                       <TableHead
                         className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
@@ -150,21 +163,36 @@ export default function LeaderboardClient() {
                       >
                         Score{renderSortIcon("elo_score")}
                       </TableHead>
-                      <TableHead className="text-center">95% CI</TableHead>
+                      <TableHead
+                        className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("elo_ci")}
+                      >
+                        95% CI{renderSortIcon("elo_ci")}
+                      </TableHead>
                       <TableHead
                         className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
                         onClick={() => handleSort("vote_count")}
                       >
                         Votes{renderSortIcon("vote_count")}
                       </TableHead>
-                      <TableHead className="text-center">Win Rate</TableHead>
+                      <TableHead
+                        className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("win_rate")}
+                      >
+                        Win Rate{renderSortIcon("win_rate")}
+                      </TableHead>
                       <TableHead
                         className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
                         onClick={() => handleSort("organization")}
                       >
                         Organization{renderSortIcon("organization")}
                       </TableHead>
-                      <TableHead className="text-center">License</TableHead>
+                      <TableHead
+                        className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("license")}
+                      >
+                        License{renderSortIcon("license")}
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

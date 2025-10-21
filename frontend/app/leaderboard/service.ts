@@ -12,17 +12,24 @@ import type {
 /**
  * Fetch leaderboard data
  *
- * @param sortBy - Field to sort by (default: "elo_score")
- * @param order - Sort order (default: "desc")
+ * @param sortBy - Field to sort by (default: "rank")
+ * @param order - Sort order (default: "asc")
  * @returns Leaderboard data with metadata
  */
 export async function getLeaderboard(
-  sortBy: SortBy = "elo_score",
-  order: SortOrder = "desc"
+  sortBy: SortBy = "rank",
+  order: SortOrder = "asc"
 ): Promise<LeaderboardResponse> {
+  // Map 'rank' to 'elo_score' for backend (rank is derived from elo_score)
+  const backendSortBy = sortBy === "rank" ? "elo_score" : sortBy;
+  // Reverse order for rank (asc rank = desc elo_score)
+  const backendOrder = sortBy === "rank"
+    ? (order === "asc" ? "desc" : "asc")
+    : order;
+
   const params = new URLSearchParams({
-    sort_by: sortBy,
-    order,
+    sort_by: backendSortBy,
+    order: backendOrder,
   });
 
   return await apiClient.get<LeaderboardResponse>(

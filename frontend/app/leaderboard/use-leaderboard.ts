@@ -32,8 +32,8 @@ export function useLeaderboard(): UseLeaderboardReturn {
   const [metadata, setMetadata] = useState<LeaderboardMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortBy>("elo_score");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [sortBy, setSortBy] = useState<SortBy>("rank");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchLeaderboard = useCallback(async () => {

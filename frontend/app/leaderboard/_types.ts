@@ -25,5 +25,5 @@ export interface LeaderboardResponse {
   metadata: LeaderboardMetadata;
 }
 
-export type SortBy = "elo_score" | "vote_count" | "organization";
+export type SortBy = "rank" | "elo_score" | "elo_ci" | "vote_count" | "win_rate" | "organization" | "license";
 export type SortOrder = "asc" | "desc";
