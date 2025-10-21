@@ -259,3 +259,163 @@ def test_add_follow_up_message_battle_already_voted(client: TestClient):
         "voted" in response.json()["detail"].lower()
         or "cannot add" in response.json()["detail"].lower()
     )
+
+
+def test_vote_on_battle_success(client: TestClient):
+    """
+    Test voting on battle successfully
+
+    Scenario:
+    1. User submits vote on ongoing battle
+    2. System creates vote record with denormalized model IDs
+    3. System updates battle.status to 'voted'
+    4. System updates session.last_active_at
+    5. Returns vote confirmation with revealed model identities
+    """
+    # Arrange
+    battle_id = "battle_abc123"
+    vote_choice = "left_better"
+
+    mock_battle = Battle(
+        id=1,
+        battle_id=battle_id,
+        session_id="session_xyz789",
+        left_model_id="gpt-4o-mini",
+        right_model_id="llama-3-1-8b",
+        conversation=[
+            {
+                "role": "user",
+                "content": "What is Python?",
+                "timestamp": "2025-10-21T10:00:00Z",
+            },
+            {
+                "role": "assistant",
+                "model_id": "gpt-4o-mini",
+                "position": "left",
+                "content": "Python is a programming language.",
+                "latency_ms": 250,
+                "timestamp": "2025-10-21T10:00:01Z",
+            },
+            {
+                "role": "assistant",
+                "model_id": "llama-3-1-8b",
+                "position": "right",
+                "content": "Python is a high-level language.",
+                "latency_ms": 280,
+                "timestamp": "2025-10-21T10:00:01Z",
+            },
+        ],
+        status="ongoing",
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+
+    with patch(
+        "llmbattler_backend.services.session_service.BattleRepository"
+    ) as mock_battle_repo_class, patch(
+        "llmbattler_backend.services.session_service.SessionRepository"
+    ) as mock_session_repo_class, patch(
+        "llmbattler_backend.services.session_service.VoteRepository"
+    ) as mock_vote_repo_class:
+        # Mock repositories
+        mock_battle_repo = AsyncMock()
+        mock_session_repo = AsyncMock()
+        mock_vote_repo = AsyncMock()
+
+        mock_battle_repo.get_by_battle_id.return_value = mock_battle
+        mock_battle_repo.update_status.return_value = None
+        mock_session_repo.update_last_active_at.return_value = None
+        mock_vote_repo.create.return_value = None
+
+        mock_battle_repo_class.return_value = mock_battle_repo
+        mock_session_repo_class.return_value = mock_session_repo
+        mock_vote_repo_class.return_value = mock_vote_repo
+
+        # Act
+        response = client.post(
+            f"/api/battles/{battle_id}/vote",
+            json={"vote": vote_choice},
+        )
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["battle_id"] == battle_id
+    assert data["vote"] == vote_choice
+    assert data["revealed_models"]["left"] == "gpt-4o-mini"
+    assert data["revealed_models"]["right"] == "llama-3-1-8b"
+
+
+def test_vote_on_battle_not_found(client: TestClient):
+    """
+    Test voting on non-existent battle fails
+
+    Scenario:
+    1. User submits vote on non-existent battle
+    2. Returns 404 not found error
+    """
+    # Arrange
+    battle_id = "battle_nonexistent"
+    vote_choice = "left_better"
+
+    with patch(
+        "llmbattler_backend.services.session_service.BattleRepository"
+    ) as mock_battle_repo_class:
+        # Mock battle not found
+        mock_battle_repo = AsyncMock()
+        mock_battle_repo.get_by_battle_id.return_value = None
+        mock_battle_repo_class.return_value = mock_battle_repo
+
+        # Act
+        response = client.post(
+            f"/api/battles/{battle_id}/vote",
+            json={"vote": vote_choice},
+        )
+
+    # Assert
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+
+def test_vote_on_battle_already_voted(client: TestClient):
+    """
+    Test voting on already-voted battle fails
+
+    Scenario:
+    1. User tries to vote on battle that has already been voted
+    2. Returns 400 bad request error
+    """
+    # Arrange
+    battle_id = "battle_already_voted"
+    vote_choice = "left_better"
+
+    mock_battle = Battle(
+        id=1,
+        battle_id=battle_id,
+        session_id="session_xyz789",
+        left_model_id="gpt-4o-mini",
+        right_model_id="llama-3-1-8b",
+        conversation=[],
+        status="voted",  # Already voted
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+
+    with patch(
+        "llmbattler_backend.services.session_service.BattleRepository"
+    ) as mock_battle_repo_class:
+        # Mock battle found but already voted
+        mock_battle_repo = AsyncMock()
+        mock_battle_repo.get_by_battle_id.return_value = mock_battle
+        mock_battle_repo_class.return_value = mock_battle_repo
+
+        # Act
+        response = client.post(
+            f"/api/battles/{battle_id}/vote",
+            json={"vote": vote_choice},
+        )
+
+    # Assert
+    assert response.status_code == 400
+    detail = response.json()["detail"].lower()
+    assert ("already" in detail and "voted" in detail) or "been voted" in detail

@@ -12,7 +12,7 @@ from typing import Dict
 from llmbattler_shared.models import Battle, Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..repositories import BattleRepository, SessionRepository
+from ..repositories import BattleRepository, SessionRepository, VoteRepository
 from .llm_client import get_llm_client
 from .model_service import get_model_service
 
@@ -461,4 +461,82 @@ async def add_follow_up_message(
         ],
         "message_count": user_message_count,
         "max_messages": 6,  # Backend enforced limit
+    }
+
+
+async def vote_on_battle(
+    battle_id: str,
+    vote: str,
+    db: AsyncSession,
+) -> Dict:
+    """
+    Submit vote on battle and reveal model identities
+
+    Transaction:
+    1. Get battle (check exists and ongoing)
+    2. Create vote record with denormalized model IDs
+    3. Update battle status to 'voted'
+    4. Update session last_active_at timestamp
+    5. Return vote confirmation with revealed models
+
+    Args:
+        battle_id: Existing battle ID
+        vote: User's vote (left_better, right_better, tie, both_bad)
+        db: Database session
+
+    Returns:
+        Dict with battle_id, vote, revealed_models
+
+    Raises:
+        ValueError: If battle not found or already voted
+    """
+    logger.info(f"Processing vote for battle {battle_id}: {vote}")
+
+    # Initialize repositories
+    battle_repo = BattleRepository(db)
+    session_repo = SessionRepository(db)
+    vote_repo = VoteRepository(db)
+
+    # 1. Get battle and validate
+    battle = await battle_repo.get_by_battle_id(battle_id)
+    if not battle:
+        raise ValueError(f"Battle not found: {battle_id}")
+
+    if battle.status != "ongoing":
+        raise ValueError(f"Battle has already been voted: {battle_id}")
+
+    # 2. Create vote record with denormalized model IDs
+    vote_id = f"vote_{uuid.uuid4().hex[:12]}"
+    from llmbattler_shared.models import Vote
+
+    vote_record = Vote(
+        vote_id=vote_id,
+        battle_id=battle_id,
+        session_id=battle.session_id,
+        vote=vote,
+        left_model_id=battle.left_model_id,
+        right_model_id=battle.right_model_id,
+        processing_status="pending",
+        voted_at=datetime.now(UTC),
+    )
+
+    await vote_repo.create(vote_record)
+    logger.info(f"Vote record created: {vote_id}")
+
+    # 3. Update battle status to 'voted'
+    await battle_repo.update(battle.id, {"status": "voted"})
+    logger.info(f"Battle status updated to 'voted': {battle_id}")
+
+    # 4. Update session last_active_at
+    await session_repo.update_last_active_at(battle.session_id)
+    logger.info(f"Session last_active_at updated: {battle.session_id}")
+
+    # 5. Return vote confirmation with revealed models
+    return {
+        "battle_id": battle_id,
+        "vote": vote,
+        "revealed_models": {
+            "left": battle.left_model_id,
+            "right": battle.right_model_id,
+        },
     }
