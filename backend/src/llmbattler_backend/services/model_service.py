@@ -4,8 +4,9 @@ Model configuration management service
 
 import logging
 import os
+import random
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import yaml
 from llmbattler_shared.config import settings
@@ -131,6 +132,33 @@ class ModelService:
         """
         active_models = self.get_active_models()
         return [m.to_model_info() for m in active_models]
+
+    def select_models_for_battle(self) -> Tuple[ModelConfig, ModelConfig]:
+        """
+        Select 2 random models for battle
+
+        Strategy: Uniform random selection (all models equal probability)
+        Future: Can be upgraded to ELO-based matching, category-based, etc.
+
+        Returns:
+            Tuple of (model_a, model_b) where model_a != model_b
+
+        Raises:
+            ValueError: If less than 2 active models available
+        """
+        active_models = self.get_active_models()
+
+        if len(active_models) < 2:
+            raise ValueError(
+                f"Need at least 2 active models for battle, found {len(active_models)}"
+            )
+
+        # Random selection without replacement
+        model_a, model_b = random.sample(active_models, 2)
+
+        logger.info(f"Selected models for battle: {model_a.id} vs {model_b.id}")
+
+        return model_a, model_b
 
 
 # Singleton instance
