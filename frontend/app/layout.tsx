@@ -29,7 +29,7 @@ export default function RootLayout({
               {/* Mobile Header */}
               <header className="flex items-center gap-4 border-b border-zinc-800 bg-zinc-950 p-4 md:hidden">
                 <MobileSidebar />
-                <h1 className="text-lg font-semibold text-zinc-100">LMArena</h1>
+                <h1 className="text-lg font-semibold text-zinc-100">LLM Battler</h1>
               </header>
 
               {/* Page Content */}
