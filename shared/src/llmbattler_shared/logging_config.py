@@ -56,7 +56,9 @@ def setup_logging(logger_name: str = "llmbattler") -> logging.Logger:
     # Add handler to logger
     logger.addHandler(stream_handler)
 
-    # Prevent propagation to root logger (avoid duplicate logs)
-    logger.propagate = False
+    # Allow propagation for hierarchical logging
+    # Package logger (e.g., "llmbattler_backend") propagates to child loggers
+    # Child loggers (e.g., "llmbattler_backend.api.sessions") inherit settings
+    logger.propagate = True
 
     return logger

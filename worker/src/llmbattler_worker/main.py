@@ -6,20 +6,15 @@ and update ELO ratings in PostgreSQL.
 """
 
 import asyncio
-import logging
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from llmbattler_shared.config import settings
+from llmbattler_shared.logging_config import setup_logging
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()],
-)
-
-logger = logging.getLogger(__name__)
+# Configure package-level logging
+# Child modules (e.g., llmbattler_worker.*) will inherit this configuration
+logger = setup_logging("llmbattler_worker")
 
 
 async def run_aggregation():
