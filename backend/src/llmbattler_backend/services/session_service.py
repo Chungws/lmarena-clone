@@ -84,9 +84,7 @@ async def create_session_with_battle(
         left_task = llm_client.chat_completion(left_model, messages)
         right_task = llm_client.chat_completion(right_model, messages)
 
-        left_response, right_response = await asyncio.gather(
-            left_task, right_task
-        )
+        left_response, right_response = await asyncio.gather(left_task, right_task)
 
         logger.info(
             f"LLM responses received: "
@@ -161,4 +159,306 @@ async def create_session_with_battle(
                 "latency_ms": right_response.latency_ms,
             },
         ],
+    }
+
+
+async def create_battle_in_session(
+    session_id: str,
+    prompt: str,
+    db: AsyncSession,
+) -> Dict:
+    """
+    Create new battle in existing session
+
+    Flow:
+    1. Verify session exists
+    2. Update session.last_active_at
+    3. Select 2 NEW random models
+    4. Call LLMs in parallel
+    5. Create battle with conversation
+    6. Return anonymous responses
+
+    Args:
+        session_id: Existing session ID
+        prompt: User's prompt for new battle
+        db: Database session
+
+    Returns:
+        Dict with session_id, battle_id, message_id, responses
+
+    Raises:
+        ValueError: If session not found
+        Exception: If LLM API fails or model selection fails
+    """
+    logger.info(f"Creating new battle in session {session_id} with prompt: {prompt[:50]}...")
+
+    # Initialize repositories
+    session_repo = SessionRepository(db)
+    battle_repo = BattleRepository(db)
+
+    # 1. Verify session exists
+    session = await session_repo.get_by_session_id(session_id)
+    if not session:
+        raise ValueError(f"Session not found: {session_id}")
+
+    logger.info(f"Session found: {session_id}")
+
+    # 2. Update session.last_active_at
+    session.last_active_at = datetime.now(UTC)
+    session = await session_repo.update(session)
+
+    # 3. Select 2 NEW random models
+    model_service = get_model_service()
+    model_a, model_b = model_service.select_models_for_battle()
+
+    # Randomly assign left/right positions (prevent position bias)
+    if random.random() < 0.5:
+        left_model, right_model = model_a, model_b
+    else:
+        left_model, right_model = model_b, model_a
+
+    logger.info(f"Models selected: left={left_model.id}, right={right_model.id}")
+
+    # 4. Call LLMs in parallel
+    llm_client = get_llm_client()
+
+    messages = [{"role": "user", "content": prompt}]
+
+    try:
+        # Parallel API calls
+        left_task = llm_client.chat_completion(left_model, messages)
+        right_task = llm_client.chat_completion(right_model, messages)
+
+        left_response, right_response = await asyncio.gather(left_task, right_task)
+
+        logger.info(
+            f"LLM responses received: "
+            f"left={left_response.latency_ms}ms, "
+            f"right={right_response.latency_ms}ms"
+        )
+
+    except Exception as e:
+        logger.error(f"LLM API call failed: {e}")
+        # Rollback session update
+        await db.rollback()
+        raise Exception(f"Failed to get LLM responses: {str(e)}")
+
+    # 5. Create battle with conversation
+    battle_id = f"battle_{uuid.uuid4().hex[:12]}"
+
+    conversation = [
+        {
+            "role": "user",
+            "content": prompt,
+            "timestamp": datetime.now(UTC).isoformat(),
+        },
+        {
+            "role": "assistant",
+            "model_id": left_model.id,
+            "position": "left",
+            "content": left_response.content,
+            "latency_ms": left_response.latency_ms,
+            "timestamp": datetime.now(UTC).isoformat(),
+        },
+        {
+            "role": "assistant",
+            "model_id": right_model.id,
+            "position": "right",
+            "content": right_response.content,
+            "latency_ms": right_response.latency_ms,
+            "timestamp": datetime.now(UTC).isoformat(),
+        },
+    ]
+
+    battle = Battle(
+        battle_id=battle_id,
+        session_id=session_id,
+        left_model_id=left_model.id,
+        right_model_id=right_model.id,
+        conversation=conversation,
+        status="ongoing",
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    battle = await battle_repo.create(battle)
+
+    # Commit both session update and battle creation
+    await db.commit()
+
+    logger.info(f"Battle created: {battle_id}")
+
+    # 6. Return anonymous responses
+    return {
+        "session_id": session_id,
+        "battle_id": battle_id,
+        "message_id": "msg_1",  # First message of new battle
+        "responses": [
+            {
+                "position": "left",
+                "text": left_response.content,
+                "latency_ms": left_response.latency_ms,
+            },
+            {
+                "position": "right",
+                "text": right_response.content,
+                "latency_ms": right_response.latency_ms,
+            },
+        ],
+    }
+
+
+async def add_follow_up_message(
+    battle_id: str,
+    prompt: str,
+    db: AsyncSession,
+) -> Dict:
+    """
+    Add follow-up message to existing battle conversation
+
+    Flow:
+    1. Verify battle exists and is ongoing
+    2. Retrieve conversation history from JSONB
+    3. Build message history for each model (OpenAI format)
+    4. Call LLMs with full history + new prompt
+    5. Append new messages to conversation JSONB
+    6. Update battle
+    7. Return anonymous responses with message_count
+
+    Args:
+        battle_id: Existing battle ID
+        prompt: User's follow-up prompt
+        db: Database session
+
+    Returns:
+        Dict with battle_id, message_id, responses, message_count, max_messages
+
+    Raises:
+        ValueError: If battle not found or already voted
+        Exception: If LLM API fails
+    """
+    logger.info(f"Adding follow-up message to battle {battle_id} with prompt: {prompt[:50]}...")
+
+    # Initialize repository
+    battle_repo = BattleRepository(db)
+
+    # 1. Verify battle exists
+    battle = await battle_repo.get_by_battle_id(battle_id)
+    if not battle:
+        raise ValueError(f"Battle not found: {battle_id}")
+
+    # 2. Check battle status (must be ongoing)
+    if battle.status != "ongoing":
+        raise ValueError(f"Cannot add message to battle with status: {battle.status}")
+
+    logger.info(f"Battle found: {battle_id}, current messages: {len(battle.conversation)}")
+
+    # 3. Get model configs
+    model_service = get_model_service()
+    left_model = model_service.get_model(battle.left_model_id)
+    right_model = model_service.get_model(battle.right_model_id)
+
+    # 4. Build conversation history for each model (OpenAI chat format)
+    # Extract user messages and assistant messages for each position
+    left_history = []
+    right_history = []
+
+    for msg in battle.conversation:
+        if msg["role"] == "user":
+            # User messages go to both models
+            left_history.append({"role": "user", "content": msg["content"]})
+            right_history.append({"role": "user", "content": msg["content"]})
+        elif msg["role"] == "assistant":
+            # Assistant messages go to their respective position
+            if msg["position"] == "left":
+                left_history.append({"role": "assistant", "content": msg["content"]})
+            elif msg["position"] == "right":
+                right_history.append({"role": "assistant", "content": msg["content"]})
+
+    # Add new user message to history
+    left_history.append({"role": "user", "content": prompt})
+    right_history.append({"role": "user", "content": prompt})
+
+    logger.info(
+        f"Built conversation history: left={len(left_history)} messages, right={len(right_history)} messages"
+    )
+
+    # 5. Call LLMs with full history
+    llm_client = get_llm_client()
+
+    try:
+        # Parallel API calls with full history
+        left_task = llm_client.chat_completion(left_model, left_history)
+        right_task = llm_client.chat_completion(right_model, right_history)
+
+        left_response, right_response = await asyncio.gather(left_task, right_task)
+
+        logger.info(
+            f"LLM responses received: "
+            f"left={left_response.latency_ms}ms, "
+            f"right={right_response.latency_ms}ms"
+        )
+
+    except Exception as e:
+        logger.error(f"LLM API call failed: {e}")
+        await db.rollback()
+        raise Exception(f"Failed to get LLM responses: {str(e)}")
+
+    # 6. Append new messages to conversation (JSONB)
+    new_messages = [
+        {
+            "role": "user",
+            "content": prompt,
+            "timestamp": datetime.now(UTC).isoformat(),
+        },
+        {
+            "role": "assistant",
+            "model_id": left_model.id,
+            "position": "left",
+            "content": left_response.content,
+            "latency_ms": left_response.latency_ms,
+            "timestamp": datetime.now(UTC).isoformat(),
+        },
+        {
+            "role": "assistant",
+            "model_id": right_model.id,
+            "position": "right",
+            "content": right_response.content,
+            "latency_ms": right_response.latency_ms,
+            "timestamp": datetime.now(UTC).isoformat(),
+        },
+    ]
+
+    # Append to existing conversation
+    battle.conversation = battle.conversation + new_messages
+    battle.updated_at = datetime.now(UTC)
+
+    # 7. Update battle
+    battle = await battle_repo.update(battle)
+    await db.commit()
+
+    # Calculate message count (number of user messages)
+    user_message_count = sum(1 for msg in battle.conversation if msg["role"] == "user")
+
+    logger.info(
+        f"Follow-up message added to battle: {battle_id}, total user messages: {user_message_count}"
+    )
+
+    # 8. Return anonymous responses
+    return {
+        "battle_id": battle_id,
+        "message_id": f"msg_{user_message_count}",  # Second user message is msg_2, etc.
+        "responses": [
+            {
+                "position": "left",
+                "text": left_response.content,
+                "latency_ms": left_response.latency_ms,
+            },
+            {
+                "position": "right",
+                "text": right_response.content,
+                "latency_ms": right_response.latency_ms,
+            },
+        ],
+        "message_count": user_message_count,
+        "max_messages": 6,  # Backend enforced limit
     }
