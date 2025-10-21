@@ -430,34 +430,40 @@ Response:
 
 ---
 
-### Phase 1.4: Frontend - Battle UI
+### Phase 1.4: Frontend - Battle UI ✅
+
+**Status:** ✅ Completed - **PR #TBD (2025-10-21)**
 
 **Tasks:**
-- [ ] Create `/battle` page (Next.js App Router)
-- [ ] Implement session-based battle flow
-  - [ ] **Session creation** (first prompt)
+- [x] Create `/battle` page (Next.js App Router)
+- [x] Implement session-based battle flow
+  - [x] **Session creation** (first prompt)
     - Prompt input field (textarea)
     - "Submit" button to create session
     - Loading state during API calls
-  - [ ] **Side-by-side response display** (Assistant A vs Assistant B)
+  - [x] **Side-by-side response display** (Assistant A vs Assistant B)
     - Conversation history display (scrollable)
     - Each message shows timestamp
-  - [ ] **Follow-up message input**
+  - [x] **Follow-up message input**
     - "Send Follow-up" button
     - Available only before voting
-  - [ ] **Voting buttons** (ends current battle)
+  - [x] **Voting buttons** (ends current battle)
     - "Left is Better", "Tie", "Both are bad", "Right is Better"
     - Reveal model names after voting
-  - [ ] **New Battle button** (after voting)
+  - [x] **New Battle button** (after voting)
     - "Start New Battle" to begin new comparison in same session
     - Keeps session title and history sidebar
-  - [ ] **Session sidebar** (optional MVP feature)
+  - [ ] **Session sidebar** (optional MVP feature - deferred)
     - Show session title
     - List all battles in session
     - Click to view past battles
-- [ ] Add error handling (API failures, network errors)
-- [ ] Use shadcn/ui components (Button, Card, Textarea, Alert, ScrollArea)
-- [ ] Add responsive design (mobile-friendly)
+- [x] Add error handling (API failures, network errors)
+- [x] Use shadcn/ui components (Button, Card, Textarea, Alert, ScrollArea)
+- [x] Add responsive design (mobile-friendly)
+- [x] Create API client service (`lib/apiClient.ts`)
+- [x] Create custom hooks (`use-battle.ts`) for state management
+- [x] Add TypeScript types (`_types.ts`)
+- [x] Tailwind CSS v4 migration (for Next.js 15 + Turbopack compatibility)
 
 **UI Flow:**
 ```
@@ -475,20 +481,20 @@ Response:
 
 ---
 
-### Phase 1.5: Frontend - API Integration
+### Phase 1.5: Frontend - API Integration ✅
+
+**Status:** ✅ Completed - **Merged with Phase 1.4 (2025-10-21)**
 
 **Tasks:**
-- [ ] Create API client service (`src/lib/api/battles.ts`)
-  - [ ] `createSession(prompt: string)` → Create session + first battle
-  - [ ] `createBattle(sessionId: string, prompt: string)` → New battle in session
-  - [ ] `sendFollowUp(battleId: string, prompt: string)` → Add message to conversation
-  - [ ] `submitVote(battleId: string, vote: string)` → Submit vote
-- [ ] Create custom hooks
-  - [ ] `useSession()` for session state management
-  - [ ] `useBattle()` for battle state management (including conversation history)
-  - [ ] `useVote()` for voting actions
-- [ ] Handle loading and error states
-- [ ] Add TypeScript types for API responses (Session, Battle, Message, Response, Vote)
+- [x] Create API client service (`lib/apiClient.ts`)
+  - [x] `createSession(prompt: string)` → Create session + first battle
+  - [x] `createBattle(sessionId: string, prompt: string)` → New battle in session
+  - [x] `sendFollowUp(battleId: string, prompt: string)` → Add message to conversation
+  - [x] `submitVote(battleId: string, vote: string)` → Submit vote
+- [x] Create custom hooks
+  - [x] `useBattle()` for unified state management (session + battle + conversation + vote)
+- [x] Handle loading and error states
+- [x] Add TypeScript types for API responses (Session, Battle, Message, Response, Vote)
 
 ---
 
