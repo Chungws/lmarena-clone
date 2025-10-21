@@ -231,14 +231,17 @@ database = Database(
   - [x] Create async Database client with connection pooling
   - [x] Load SQLModel models from `shared/` package (sessions, battles, votes)
   - [x] Run Alembic migrations to create tables
-- [ ] Implement `POST /api/sessions` endpoint
-  - [ ] Accept user prompt (text)
-  - [ ] Create new session (session_id, title=prompt[:200])
-  - [ ] Randomly select 2 models using `select_models_for_battle()`
-  - [ ] **Randomly assign left/right positions** (prevent position bias)
-  - [ ] Call LLM APIs in parallel (async) with timeout and retry logic
-  - [ ] Create battle with JSONB conversation (user message + 2 assistant messages)
-  - [ ] Return anonymous responses (model IDs hidden, positions randomized)
+- [x] Implement `POST /api/sessions` endpoint - **PR #19 (Part 1, 2025-01-21)**
+  - [x] Accept user prompt (text)
+  - [x] Create new session (session_id, title=prompt[:200])
+  - [x] Randomly select 2 models using `select_models_for_battle()`
+  - [x] **Randomly assign left/right positions** (prevent position bias)
+  - [x] Call LLM APIs in parallel (async) with timeout and retry logic
+  - [x] Create battle with JSONB conversation (user message + 2 assistant messages)
+  - [x] Return anonymous responses (model IDs hidden, positions randomized)
+  - [x] Add Repository pattern for data access layer
+  - [x] Fix timezone-aware timestamps (TIMESTAMPTZ)
+  - [x] Write comprehensive tests (TDD)
 - [ ] Implement `POST /api/sessions/{session_id}/battles` endpoint
   - [ ] Accept user prompt
   - [ ] Update session.last_active_at
@@ -253,7 +256,7 @@ database = Database(
   - [ ] Return anonymous responses
 - [ ] Add error handling (API failures, timeouts)
 - [ ] Add logging for key events (session/battle creation, API failures, errors)
-- [ ] Write tests for session creation and multi-turn conversations
+- [ ] Write tests for multi-turn conversations
 
 **API Spec (Create Session):**
 ```
