@@ -242,21 +242,21 @@ database = Database(
   - [x] Add Repository pattern for data access layer
   - [x] Fix timezone-aware timestamps (TIMESTAMPTZ)
   - [x] Write comprehensive tests (TDD)
-- [ ] Implement `POST /api/sessions/{session_id}/battles` endpoint
-  - [ ] Accept user prompt
-  - [ ] Update session.last_active_at
-  - [ ] Randomly select 2 NEW models (different from previous battle)
-  - [ ] Create new battle in same session
-  - [ ] Return anonymous responses
-- [ ] Implement `POST /api/battles/{battle_id}/messages` endpoint
-  - [ ] Accept follow-up prompt
-  - [ ] Retrieve conversation history from battle (JSONB)
-  - [ ] Call LLM APIs with full message history (OpenAI chat format)
-  - [ ] Append new messages to battle.conversation using `||` operator
-  - [ ] Return anonymous responses
-- [ ] Add error handling (API failures, timeouts)
-- [ ] Add logging for key events (session/battle creation, API failures, errors)
-- [ ] Write tests for multi-turn conversations
+- [x] Implement `POST /api/sessions/{session_id}/battles` endpoint - **PR #21 (2025-10-21)**
+  - [x] Accept user prompt
+  - [x] Update session.last_active_at
+  - [x] Randomly select 2 NEW models (different from previous battle)
+  - [x] Create new battle in same session
+  - [x] Return anonymous responses
+- [x] Implement `POST /api/battles/{battle_id}/messages` endpoint - **PR #21 (2025-10-21)**
+  - [x] Accept follow-up prompt
+  - [x] Retrieve conversation history from battle (JSONB)
+  - [x] Call LLM APIs with full message history (OpenAI chat format)
+  - [x] Append new messages to battle.conversation using `||` operator
+  - [x] Return anonymous responses
+- [x] Add error handling (API failures, timeouts) - **PR #21 (2025-10-21)**
+- [x] Add logging for key events (session/battle creation, API failures, errors) - **PR #21 (2025-10-21)**
+- [x] Write tests for multi-turn conversations - **PR #21 (2025-10-21)**
 
 **API Spec (Create Session):**
 ```
@@ -348,16 +348,16 @@ Response:
 ### Phase 1.2: Backend - Voting API
 
 **Tasks:**
-- [ ] Implement `POST /api/battles/{battle_id}/vote` endpoint
-  - [ ] Accept vote: `left_better`, `tie`, `both_bad`, `right_better`
-  - [ ] **Transaction:**
-    - [ ] SELECT left_model_id, right_model_id FROM battles
-    - [ ] INSERT INTO votes (battle_id, vote, left_model_id, right_model_id) -- Denormalized
-    - [ ] UPDATE battles SET status = 'voted'
-    - [ ] UPDATE sessions SET last_active_at = NOW()
-  - [ ] Return model identities (reveal after vote)
-- [ ] Add vote validation (prevent duplicate votes - optional for MVP)
-- [ ] Write tests for voting
+- [x] Implement `POST /api/battles/{battle_id}/vote` endpoint
+  - [x] Accept vote: `left_better`, `tie`, `both_bad`, `right_better`
+  - [x] **Transaction:**
+    - [x] SELECT left_model_id, right_model_id FROM battles
+    - [x] INSERT INTO votes (battle_id, vote, left_model_id, right_model_id) -- Denormalized
+    - [x] UPDATE battles SET status = 'voted'
+    - [x] UPDATE sessions SET last_active_at = NOW()
+  - [x] Return model identities (reveal after vote)
+- [x] Add vote validation (prevent duplicate votes - optional for MVP)
+- [x] Write tests for voting
 
 **API Spec:**
 ```
