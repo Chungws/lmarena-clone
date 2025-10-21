@@ -1,40 +1,59 @@
 """
-PostgreSQL database connection for worker
+Database connection and session management for worker
 
-Worker uses connection pooling with smaller pool size than backend API.
+Worker uses async PostgreSQL connection with smaller pool size than backend API.
 Configured for batch operations and lower concurrency.
 """
 
-import os
+from typing import AsyncGenerator
 
-from databases import Database
+from llmbattler_shared.config import settings
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+
+# Create async engine with worker-specific pool configuration
+# Worker typically uses fewer connections than backend API
+engine = create_async_engine(
+    settings.postgres_uri,
+    echo=False,
+    pool_size=2,  # Worker uses fewer connections (backend uses 5)
+    max_overflow=3,  # Total max connections: 2 + 3 = 5 (backend: 5 + 5 = 10)
+    pool_timeout=10,  # Connection timeout in seconds
+)
+
+# Create async session factory
+async_session_maker = sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
 
 
-def get_database() -> Database:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
-    Get PostgreSQL database instance with connection pooling
+    Get database session for worker operations
 
-    Returns:
-        Database: Configured Database instance
+    Usage:
+        async with get_db() as session:
+            result = await session.execute(...)
+            await session.commit()
 
-    Pool Configuration:
-        - min_size: 2 (worker typically uses fewer connections)
-        - max_size: 5 (sufficient for batch operations)
-        - timeout: 10 (seconds to wait for connection)
+    Yields:
+        AsyncSession: Database session instance
 
-    Environment Variables:
-        DATABASE_URL: PostgreSQL connection string
-                     Default: postgresql://localhost/llmbattler
+    Notes:
+        - Automatically commits on success
+        - Automatically rolls back on exception
+        - Always closes session in finally block
     """
-    database_url = os.getenv("DATABASE_URL", "postgresql://localhost/llmbattler")
-
-    return Database(
-        database_url,
-        min_size=2,  # Worker typically uses fewer connections
-        max_size=5,  # Sufficient for batch operations
-        timeout=10,  # Connection timeout in seconds
-    )
-
-
-# Global database instance (singleton pattern)
-database = get_database()
+    async with async_session_maker() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()

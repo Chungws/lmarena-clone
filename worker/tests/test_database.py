@@ -2,89 +2,61 @@
 Tests for PostgreSQL database connection
 """
 
-import os
-
 import pytest
-from databases import Database
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from llmbattler_worker.database import get_database
+from llmbattler_worker.database import async_session_maker, engine, get_db
 
 
 class TestDatabaseConnection:
     """Test database connection setup"""
 
-    @pytest.mark.asyncio
-    async def test_get_database_creates_connection(self):
-        """Test that get_database returns a Database instance"""
-        # Arrange & Act
-        db = get_database()
-
+    def test_engine_created(self):
+        """Test that async engine is created"""
         # Assert
-        assert isinstance(db, Database)
-        assert db.url is not None
+        assert engine is not None
+        # Pool configuration is set via create_async_engine parameters
+        # We trust SQLAlchemy to handle pool_size=2, max_overflow=3 correctly
+
+    def test_session_maker_created(self):
+        """Test that async session maker is created"""
+        # Assert
+        assert async_session_maker is not None
+        # Session maker configuration is set via sessionmaker parameters
+        # We trust SQLAlchemy to handle AsyncSession, expire_on_commit=False correctly
 
     @pytest.mark.asyncio
-    async def test_database_uses_connection_pooling(self):
-        """Test that database connection is created with pooling parameters"""
-        # Arrange & Act
-        db = get_database()
-
-        # Assert - Database instance is created with URL
-        # Connection pooling parameters (min_size=2, max_size=5, timeout=10)
-        # are passed to Database constructor but not directly testable
-        # We trust the databases library to handle these correctly
-        assert isinstance(db, Database)
-        assert db.url is not None
-
-    @pytest.mark.asyncio
-    async def test_database_url_from_environment(self):
-        """Test that database URL is read from environment variable"""
-        # Arrange
-        test_url = "postgresql://testuser:testpass@localhost:5432/testdb"
-        os.environ["DATABASE_URL"] = test_url
-
+    async def test_get_db_returns_async_session(self):
+        """Test that get_db yields AsyncSession"""
         # Act
-        db = get_database()
-
-        # Assert
-        assert str(db.url) == test_url
-
-        # Cleanup
-        del os.environ["DATABASE_URL"]
+        async for session in get_db():
+            # Assert
+            assert isinstance(session, AsyncSession)
+            break  # Only test first yield
 
     @pytest.mark.asyncio
-    async def test_database_url_default_fallback(self):
-        """Test that database URL falls back to default if not in environment"""
-        # Arrange - Remove DATABASE_URL if it exists
-        if "DATABASE_URL" in os.environ:
-            original_url = os.environ.pop("DATABASE_URL")
-        else:
-            original_url = None
+    async def test_get_db_context_manager(self):
+        """Test that get_db works as async context manager"""
+        # Act & Assert - Should work without errors
+        session_created = False
+        async for session in get_db():
+            session_created = True
+            assert isinstance(session, AsyncSession)
+            # Don't execute any queries - just test session creation
+            break
 
-        # Act
-        db = get_database()
+        assert session_created is True
 
-        # Assert
-        assert "postgresql://" in str(db.url)
-        assert "llmbattler" in str(db.url)
-
-        # Cleanup
-        if original_url:
-            os.environ["DATABASE_URL"] = original_url
-
-    @pytest.mark.skip(reason="Requires actual PostgreSQL server - move to integration tests")
+    @pytest.mark.skip(reason="Requires actual PostgreSQL server - integration test")
     @pytest.mark.asyncio
-    async def test_database_connect_disconnect(self):
-        """Test database connection lifecycle - integration test"""
+    async def test_database_query_execution(self):
+        """Test actual database query execution - integration test"""
         # NOTE: This test requires actual PostgreSQL server running
         # Move to integration tests with proper test database setup
-        # Arrange
-        db = get_database()
+        async for session in get_db():
+            # Example query: SELECT 1
+            from sqlalchemy import text
 
-        # Act & Assert - Should connect successfully
-        await db.connect()
-        assert db.is_connected
-
-        # Act & Assert - Should disconnect successfully
-        await db.disconnect()
-        assert not db.is_connected
+            result = await session.execute(text("SELECT 1"))
+            assert result.scalar() == 1
+            break

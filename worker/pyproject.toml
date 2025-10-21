@@ -10,7 +10,7 @@ dependencies = [
     "pydantic>=2.10.6",
     "pydantic-settings>=2.7.1",
     "llmbattler-shared",
-    "databases>=0.9.0",
+    "sqlalchemy>=2.0.44",
 ]
 
 [project.optional-dependencies]
