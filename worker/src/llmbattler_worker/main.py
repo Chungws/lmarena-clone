@@ -1,54 +1,141 @@
 """
 Worker main entry point
 
-Runs hourly cron job to aggregate votes from MongoDB
-and update ELO ratings in PostgreSQL.
+Runs hourly cron job to aggregate votes from PostgreSQL
+and update ELO ratings.
 """
 
 import asyncio
+from datetime import UTC, datetime
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from llmbattler_shared.config import settings
 from llmbattler_shared.logging_config import setup_logging
+from llmbattler_shared.models import WorkerStatus
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
+
+from .aggregators.elo_aggregator import ELOAggregator
+from .database import async_session_maker
 
 # Configure package-level logging
 # Child modules (e.g., llmbattler_worker.*) will inherit this configuration
 logger = setup_logging("llmbattler_worker")
 
 
-async def run_aggregation():
+async def run_aggregation(session: AsyncSession | None = None):
     """
     Main aggregation task
 
     Steps:
-    1. Read new votes from MongoDB (since last run)
+    1. Read pending votes from PostgreSQL
     2. Calculate ELO ratings for each model
     3. Update model_stats in PostgreSQL
-    4. Update worker_status with last run timestamp
+    4. Update worker_status with execution metadata
+
+    Args:
+        session: Optional database session (for testing). If None, creates own session.
     """
     logger.info("Starting vote aggregation...")
 
+    # Use provided session or create new one
+    if session is not None:
+        # Testing mode: use provided session
+        await _run_aggregation_with_session(session)
+    else:
+        # Production mode: create own session
+        async with async_session_maker() as session:
+            try:
+                await _run_aggregation_with_session(session)
+            except Exception:
+                await session.rollback()
+                raise
+            finally:
+                await session.close()
+
+
+async def _run_aggregation_with_session(session: AsyncSession):
+    """
+    Run aggregation with provided session
+
+    Args:
+        session: Database session to use
+    """
+    votes_processed = 0
+    status = "success"
+    error_message = None
+
     try:
-        # TODO: Initialize database connections
-        # - MongoDB (Motor) for reading votes
-        # - PostgreSQL (asyncpg) for writing model_stats
+        # Run ELO aggregation
+        aggregator = ELOAggregator(session)
+        votes_processed = await aggregator.process_pending_votes()
 
-        # TODO: Get last run timestamp from worker_status
+        # Update worker_status
+        await _update_worker_status(
+            session,
+            votes_processed=votes_processed,
+            status=status,
+            error_message=error_message,
+        )
 
-        # TODO: Read new votes from MongoDB
-
-        # TODO: Calculate ELO ratings
-
-        # TODO: Update PostgreSQL model_stats
-
-        # TODO: Update worker_status
-
-        logger.info("Vote aggregation complete")
+        logger.info(f"Vote aggregation complete: {votes_processed} votes processed")
 
     except Exception as e:
         logger.error(f"Aggregation failed: {e}", exc_info=True)
+        # Try to update worker_status with error
+        try:
+            await _update_worker_status(
+                session,
+                votes_processed=0,
+                status="failed",
+                error_message=str(e)[:1000],
+            )
+        except Exception as inner_e:
+            logger.error(f"Failed to update worker_status: {inner_e}", exc_info=True)
         raise
+
+
+async def _update_worker_status(
+    session,
+    votes_processed: int,
+    status: str,
+    error_message: str | None,
+):
+    """
+    Update worker_status table with execution metadata
+
+    Args:
+        session: Database session
+        votes_processed: Number of votes processed in this run
+        status: 'success' or 'failed'
+        error_message: Error message if failed, None otherwise
+    """
+    # Get or create worker_status
+    result = await session.execute(
+        select(WorkerStatus).where(WorkerStatus.worker_name == "elo_aggregator")
+    )
+    worker_status = result.scalar_one_or_none()
+
+    if worker_status is None:
+        # Create new status
+        worker_status = WorkerStatus(
+            worker_name="elo_aggregator",
+            last_run_at=datetime.now(UTC),
+            status=status,
+            votes_processed=votes_processed,
+            error_message=error_message,
+        )
+        session.add(worker_status)
+    else:
+        # Update existing status
+        worker_status.last_run_at = datetime.now(UTC)
+        worker_status.status = status
+        worker_status.votes_processed = votes_processed
+        worker_status.error_message = error_message
+
+    await session.commit()
+    logger.info(f"Updated worker_status: {status}, {votes_processed} votes")
 
 
 async def main():
