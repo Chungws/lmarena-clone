@@ -1,6 +1,6 @@
 # Feature: Leaderboard - MVP
 
-**Status:** Not Started
+**Status:** In Progress (Phase 2.2 - Infrastructure Complete)
 **Priority:** High (MVP Core Feature)
 **Estimated Time:** 1-2 weeks
 
@@ -173,13 +173,16 @@ def setup_logging(logger_name: str = "llmbattler") -> logging.Logger:
 ### Phase 2.2: Worker - ELO Calculation
 
 **Tasks:**
-- [x] Set up worker project structure (`worker/src/llmbattler_worker/`) - **PR #24 (2025-01-21)**
-- [x] Setup database connection - **PR #24 (2025-01-21)**
+- [x] Set up worker project structure (`worker/src/llmbattler_worker/`) - **PR #24 (2025-10-21)** ✅
+- [x] Setup database connection - **PR #24 (2025-10-21)** ✅
   - [x] PostgreSQL async client (SQLAlchemy AsyncSession)
-  - [x] Connection pooling configuration (pool_size=2, max_overflow=3)
-  - [x] Shared database module (`llmbattler_shared.database`) with separate engines for backend/worker
-- [x] Setup logging (Python logging to stdout) - **PR #24 (2025-01-21)**
-  - [x] Shared logging module (`llmbattler_shared.logging_config`) for consistent logging across backend/worker
+  - [x] Connection pooling configuration (pool_size=2, max_overflow=3, timeout=10s)
+  - [x] **Shared database module** (`llmbattler_shared.database`) with separate engines for backend/worker
+  - [x] **Code deduplication:** Backend 69→21 lines, Worker 60→15 lines (72-75% reduction)
+- [x] Setup logging (Python logging to stdout) - **PR #24 (2025-10-21)** ✅
+  - [x] **Shared logging module** (`llmbattler_shared.logging_config`) for consistent logging
+  - [x] **Package-level logging pattern:** Backend/Worker inherit from package logger
+  - [x] **Code deduplication:** Worker logging 64→12 lines (81% reduction)
 - [ ] Create vote aggregation script
   - [ ] Read pending votes from PostgreSQL (`processing_status = 'pending'`)
   - [ ] Calculate ELO ratings using vote results
@@ -470,4 +473,4 @@ interface WorkerStatus {
 - [00_ROADMAP.md](../00_ROADMAP.md) - Overall project roadmap
 - [CONVENTIONS/backend/](../CONVENTIONS/backend/) - Backend conventions
 
-**Last Updated:** 2025-01-21
+**Last Updated:** 2025-10-21
