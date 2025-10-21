@@ -59,9 +59,9 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 
 ## 🗺️ Development Roadmap
 
-### 🚧 Phase 0: Project Initialization (In Progress)
+### ✅ Phase 0: Project Initialization (Completed)
 
-**Status:** In Progress
+**Status:** ✅ Completed (2025-01-21)
 **Goal:** Set up project structure and documentation
 
 **Tasks:**
@@ -87,10 +87,24 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
   - 4-phase scalability path defined (10 QPS → 10,000+ QPS)
   - Complete Alembic migration spec (DATABASE_DESIGN.md)
 - ✅ **Project structure setup (backend, frontend, worker)** - Already defined in uv workspace
-- ⏳ Docker Compose configuration (PostgreSQL only)
-- ⏳ Repository README.md
+- ✅ **Docker Compose configuration (PostgreSQL only)** - **PR #14 (2025-01-21)**
+  - Removed MongoDB service from docker-compose.yml and docker-compose.dev.yml
+  - PostgreSQL-only architecture implemented
+- ✅ **Repository README.md** - **PR #15 (2025-01-21)**
+  - Updated to reflect PostgreSQL-only architecture
+  - Removed MongoDB references
+  - Updated architecture diagram and tech stack
+- ✅ **MongoDB removal** - **PR #13 (2025-01-21)**
+  - Removed motor dependency from backend and worker
+  - Deleted mongodb/ directory
+  - Removed MongoDB configuration settings
+- ✅ **Alembic migrations implemented** - **PR #16 (2025-01-21)**
+  - Initial migration (001_initial_schema.py) created
+  - All 5 tables: sessions, battles, votes, model_stats, worker_status
+  - JSONB support, indexes, CHECK constraints
+  - Async SQLAlchemy support configured
 
-**Details:** N/A (initialization phase)
+**Details:** Phase 0 completed with 4 PRs (#13, #14, #15, #16) successfully merged
 
 ---
 
@@ -236,23 +250,34 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 
 ## 📊 Current Status
 
-**Active Phase:** Phase 0 - Project Initialization
+**Active Phase:** ✅ Phase 0 Completed → 🚀 Ready for Phase 1
 **Current Branch:** `develop`
 **Latest Update:** 2025-01-21
 
 **Progress:**
-- ✅ Architecture designed
-- ✅ Tech stack finalized
-- ✅ WORKSPACE documentation completed
-- ✅ **Database design completed (PostgreSQL-only, session-based schema, no FK)**
-- ✅ **Project structure defined (uv workspace)**
-- ⏳ MVP implementation pending
+- ✅ **Phase 0: Project Initialization - COMPLETED**
+  - Architecture designed
+  - Tech stack finalized
+  - WORKSPACE documentation completed
+  - Database design completed (PostgreSQL-only, session-based schema, no FK)
+  - Project structure defined (uv workspace)
+  - Docker Compose configured (PostgreSQL only)
+  - Repository README.md updated
+  - MongoDB removed from codebase
+  - Alembic migrations implemented and tested
+
+**Completed PRs (Phase 0):**
+- PR #13: Remove MongoDB dependencies and code
+- PR #14: Update Docker Compose to PostgreSQL-only
+- PR #15: Update README.md to reflect PostgreSQL-only architecture
+- PR #16: Implement Alembic migrations from DATABASE_DESIGN.md
 
 **Next Steps:**
-1. Configure Docker Compose (PostgreSQL only)
-2. Create repository README.md
-3. Implement Alembic migrations (DATABASE_DESIGN.md)
-4. Begin Phase 1 (Battle MVP) implementation
+1. 🚀 Begin Phase 1 (Battle MVP) implementation
+2. Set up model configuration (config/models.yaml)
+3. Implement backend API endpoints
+4. Create frontend Battle UI
+5. Develop LLM integration layer
 
 ---
 
