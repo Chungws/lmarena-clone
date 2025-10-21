@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
-from llmbattler_backend.database import get_db
 from llmbattler_backend.main import app
 
 # Test database URL (use in-memory SQLite or test PostgreSQL)

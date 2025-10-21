@@ -2,15 +2,11 @@
 Tests for session and battle API endpoints
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
 from unittest.mock import AsyncMock, Mock, patch
 
-from llmbattler_backend.main import app
+from fastapi.testclient import TestClient
+
 from llmbattler_backend.services.llm_client import LLMResponse
-from llmbattler_shared.models import Battle, Session
 
 
 def test_create_session_success(client: TestClient):
