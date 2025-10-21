@@ -40,7 +40,9 @@ class BattleRepository(BaseRepository[Battle]):
         Returns:
             List of battle instances ordered by creation time
         """
-        stmt = select(Battle).where(Battle.session_id == session_id).order_by(Battle.created_at.desc())
+        stmt = (
+            select(Battle).where(Battle.session_id == session_id).order_by(Battle.created_at.desc())
+        )
         if limit:
             stmt = stmt.limit(limit)
         result = await self.db.execute(stmt)

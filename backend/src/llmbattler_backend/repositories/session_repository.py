@@ -40,7 +40,11 @@ class SessionRepository(BaseRepository[Session]):
         Returns:
             List of session instances
         """
-        stmt = select(Session).where(Session.user_id == user_id).order_by(Session.last_active_at.desc())
+        stmt = (
+            select(Session)
+            .where(Session.user_id == user_id)
+            .order_by(Session.last_active_at.desc())
+        )
         if limit:
             stmt = stmt.limit(limit)
         result = await self.db.execute(stmt)
