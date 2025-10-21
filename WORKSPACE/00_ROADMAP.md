@@ -108,30 +108,48 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 
 ---
 
-### ⏳ Phase 1: MVP - Battle Mode (Text-to-Text)
+### ✅ Phase 1: MVP - Battle Mode (Text-to-Text)
 
-**Status:** In Progress
+**Status:** ✅ Completed (2025-10-21)
 **Goal:** Enable users to compare two LLM responses in blind side-by-side testing with session-based conversations
 
 **Progress:**
+- ✅ **Phase 1.1: Session & Battle Creation API** - **PR #18, #19, #21 (2025-01-21 ~ 2025-10-21)**
+  - SQLModel models (Session, Battle, Vote)
+  - Alembic migration for database tables
+  - POST /api/sessions endpoint (session + first battle)
+  - POST /api/sessions/{session_id}/battles endpoint (new battle in session)
+  - POST /api/battles/{battle_id}/messages endpoint (follow-up messages)
+  - Repository pattern implementation
+  - Timezone-aware timestamps (TIMESTAMPTZ)
+  - Multi-turn conversation support with JSONB
+  - Comprehensive tests (7/7 passing)
+- ✅ **Phase 1.2: Voting API** - **PR #22 (2025-10-21)**
+  - POST /api/battles/{battle_id}/vote endpoint
+  - Vote validation (prevent duplicate votes)
+  - Transaction-based vote handling
+  - Model reveal after voting
+  - Tests for voting (3/3 passing)
 - ✅ **Phase 1.3: Model Management System** - **PR #17 (2025-01-21)**
   - config/models.yaml configuration
   - LLM API client with timeout/retry
   - GET /api/models endpoint
-- ✅ **Phase 1.1: Session & Battle Creation API** - **PR #21 (2025-10-21)**
-  - ✅ SQLModel models (Session, Battle, Vote) - **PR #18 (2025-01-21)**
-  - ✅ Alembic migration for database tables - **PR #18 (2025-01-21)**
-  - ✅ POST /api/sessions endpoint (Part 1) - **PR #19 (2025-01-21)**
-    - Session creation with first battle
-    - Repository pattern implementation
-    - Timezone-aware timestamps (TIMESTAMPTZ)
-    - Comprehensive tests (7/7 passing)
-  - ✅ POST /api/sessions/{session_id}/battles endpoint - **PR #21 (2025-10-21)**
-  - ✅ POST /api/battles/{battle_id}/messages endpoint - **PR #21 (2025-10-21)**
-- ✅ **Phase 1.2: Voting API** - **Ready for PR**
-  - ✅ POST /api/battles/{battle_id}/vote endpoint implemented
-  - ✅ Vote validation (prevent duplicate votes)
-  - ✅ Tests for voting (3/3 passing)
+  - OpenAI-compatible API support
+  - CORS and logging setup
+- ✅ **Phase 1.4: Frontend - Battle UI** - **PR #23 (2025-10-21)**
+  - /battle page with session-based flow
+  - Side-by-side response display
+  - Follow-up message support
+  - Voting interface with model reveal
+  - New Battle button
+  - shadcn/ui components integration
+  - Responsive mobile design
+  - Tailwind CSS v4 migration
+- ✅ **Phase 1.5: Frontend - API Integration** - **Merged into Phase 1.4**
+  - API client service (lib/apiClient.ts)
+  - Custom hooks (use-battle.ts)
+  - TypeScript types (_types.ts)
+  - Error handling and loading states
 
 **Key Features:**
 1. **Battle UI (Frontend)**
@@ -178,9 +196,9 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 
 ---
 
-### ⏳ Phase 2: MVP - Leaderboard
+### ✅ Phase 2: MVP - Leaderboard
 
-**Status:** 🔄 In Progress (Phase 2.2 - ELO Calculation Complete)
+**Status:** ✅ Completed (2025-10-21)
 **Goal:** Display ELO-based rankings for all models
 
 **Progress:**
@@ -188,13 +206,28 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
   - Tables created: sessions, battles, votes, model_stats, worker_status
   - Indexes added for fast queries
   - Schema tests written
-- ✅ **Phase 2.2: Worker ELO Calculation (Core Logic)** - **PR #XX (2025-10-21)**
+- ✅ **Phase 2.2: Worker ELO Calculation** - **PR #27, #28 (2025-10-21)**
   - ELO calculator module with Bradley-Terry CI
   - Vote aggregation script with error handling
   - 24 comprehensive tests (17 unit + 7 integration)
-- ⏳ **Phase 2.2: Scheduler Integration** - Pending next PR
-  - Connect APScheduler to ELO aggregator
-  - Worker status tracking
+  - APScheduler integration complete
+  - Worker status tracking implemented
+- ✅ **Phase 2.3: Backend - Leaderboard API** - **PR #29 (2025-10-21)**
+  - GET /api/leaderboard endpoint with sorting
+  - Model stats repository
+  - Leaderboard service layer
+  - 355 lines of comprehensive tests
+- ✅ **Phase 2.4: Frontend - Leaderboard UI** - **PR #30 (2025-10-21)**
+  - Complete leaderboard table with 8 columns
+  - Search and sorting functionality
+  - Metadata display with relative timestamps
+  - shadcn/ui components integration
+  - Responsive mobile design
+- ✅ **Phase 2.5: Frontend - API Integration** - **Merged into Phase 2.4**
+  - API service layer (service.ts)
+  - Custom React hook (use-leaderboard.ts)
+  - TypeScript types (_types.ts)
+  - Loading and error states
 
 **Key Features:**
 1. **Leaderboard UI (Frontend)**
@@ -283,12 +316,12 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 
 ## 📊 Current Status
 
-**Active Phase:** ✅ Phase 0 Completed → 🚀 Ready for Phase 1
+**Active Phase:** 🎉 **MVP COMPLETE** - Phase 0, 1, 2 All Completed!
 **Current Branch:** `develop`
-**Latest Update:** 2025-01-21
+**Latest Update:** 2025-10-22
 
 **Progress:**
-- ✅ **Phase 0: Project Initialization - COMPLETED**
+- ✅ **Phase 0: Project Initialization - COMPLETED (2025-01-21)**
   - Architecture designed
   - Tech stack finalized
   - WORKSPACE documentation completed
@@ -297,36 +330,50 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
   - Docker Compose configured (PostgreSQL only)
   - Repository README.md updated
   - MongoDB removed from codebase
-- 🚧 **Phase 2: Leaderboard MVP - IN PROGRESS**
-  - ✅ Phase 2.1: PostgreSQL Schema - **PR #23 (2025-10-21)**
-  - ✅ Phase 2.2: Worker - ELO Calculation - **PR #27, #28 (2025-10-21)**
-  - 🚧 Phase 2.3: Backend - Leaderboard API (In Progress)
-  - ✅ Phase 2.4: Frontend - Leaderboard UI - **PR #TBD (2025-10-21)**
-  - ⏳ Phase 2.5: Frontend - API Integration (Pending backend)
-  - Alembic migrations implemented and tested
 
-**Completed PRs (Phase 0):**
-- PR #13: Remove MongoDB dependencies and code
-- PR #14: Update Docker Compose to PostgreSQL-only
-- PR #15: Update README.md to reflect PostgreSQL-only architecture
-- PR #16: Implement Alembic migrations from DATABASE_DESIGN.md
+- ✅ **Phase 1: Battle MVP - COMPLETED (2025-10-21)**
+  - ✅ Phase 1.1: Session & Battle Creation API - **PR #18, #19, #21**
+  - ✅ Phase 1.2: Voting API - **PR #22**
+  - ✅ Phase 1.3: Model Management System - **PR #17**
+  - ✅ Phase 1.4: Frontend - Battle UI - **PR #23**
+  - ✅ Phase 1.5: Frontend - API Integration - **Merged into 1.4**
+
+- ✅ **Phase 2: Leaderboard MVP - COMPLETED (2025-10-21)**
+  - ✅ Phase 2.1: PostgreSQL Schema - **PR #24**
+  - ✅ Phase 2.2: Worker ELO Calculation - **PR #27, #28**
+  - ✅ Phase 2.3: Backend - Leaderboard API - **PR #29**
+  - ✅ Phase 2.4: Frontend - Leaderboard UI - **PR #30**
+  - ✅ Phase 2.5: Frontend - API Integration - **Merged into 2.4**
+
+**Completed PRs (All Phases):**
+- **Phase 0:** PR #13, #14, #15, #16
+- **Phase 1:** PR #17, #18, #19, #21, #22, #23
+- **Phase 2:** PR #24, #27, #28, #29, #30
+
+**🎯 MVP Status:**
+- ✅ Battle Mode: Users can compare LLM responses in blind testing
+- ✅ Leaderboard: ELO-based rankings displayed
+- ✅ Worker: Automated vote aggregation and ELO calculation
+- ✅ Full-stack implementation (Backend + Frontend + Worker)
 
 **Next Steps:**
-1. 🚀 Begin Phase 1 (Battle MVP) implementation
-2. Set up model configuration (config/models.yaml)
-3. Implement backend API endpoints
-4. Create frontend Battle UI
-5. Develop LLM integration layer
+1. 🧪 **End-to-End Testing** - Test complete user flow (battle → vote → leaderboard update)
+2. 🚀 **Production Deployment** - Deploy MVP to production environment
+3. 🎨 **UI/UX Improvements** - Enhance user experience based on feedback
+4. 📊 **Analytics & Monitoring** - Add logging, monitoring, and analytics
+5. 🔐 **User Authentication** - Implement auth to prevent spam and track users (Post-MVP Feature #2)
+6. 🎯 **Additional Features** - Consider Future Features (Multi-Modal, Advanced Categories, etc.)
 
 ---
 
 ## 🎯 Success Metrics
 
 ### MVP Goals
-- [ ] Users can battle 2+ models in blind testing
-- [ ] Leaderboard displays ELO rankings
-- [ ] At least 2 models supported (e.g., Ollama models)
-- [ ] 100+ test battles conducted
+- [x] Users can battle 2+ models in blind testing ✅
+- [x] Leaderboard displays ELO rankings ✅
+- [x] At least 2 models supported (e.g., Ollama models) ✅
+- [ ] 100+ test battles conducted (In Progress - Ready for testing)
+- [ ] Production deployment complete (Next step)
 
 ### Long-Term Goals
 - [ ] 10+ models supported (local + external)

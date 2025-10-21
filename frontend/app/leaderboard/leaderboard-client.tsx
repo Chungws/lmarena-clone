@@ -9,7 +9,7 @@
 import { useLeaderboard } from "./use-leaderboard";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -18,15 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert } from "@/components/ui/alert";
-import type { SortBy, SortOrder } from "./_types";
+import { ArrowUp, ArrowDown, ArrowUpDown, Search } from "lucide-react";
+import type { SortBy } from "./_types";
 
 export default function LeaderboardClient() {
   const {
@@ -41,6 +35,32 @@ export default function LeaderboardClient() {
     setSortOrder,
     setSearchQuery,
   } = useLeaderboard();
+
+  // Handle column header click for sorting
+  const handleSort = (column: SortBy) => {
+    if (sortBy === column) {
+      // Toggle order if same column
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      // Set new column and always start with ascending
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+  };
+
+  // Render sort icon
+  const renderSortIcon = (column: SortBy) => {
+    if (sortBy !== column) {
+      // Not currently sorted - show both arrows with low opacity
+      return <ArrowUpDown className="ml-1 h-4 w-4 inline opacity-30" />;
+    }
+    // Currently sorted - show direction arrow
+    return sortOrder === "asc" ? (
+      <ArrowUp className="ml-1 h-4 w-4 inline" />
+    ) : (
+      <ArrowDown className="ml-1 h-4 w-4 inline" />
+    );
+  };
 
   // Format timestamp to relative time
   const formatLastUpdated = (timestamp: string): string => {
@@ -67,84 +87,37 @@ export default function LeaderboardClient() {
           </p>
         </div>
 
-        {/* Metadata Cards */}
+        {/* Metadata Row */}
         {metadata && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Models
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metadata.total_models}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Votes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {metadata.total_votes.toLocaleString()}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Last Updated
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {formatLastUpdated(metadata.last_updated)}
-                </div>
-              </CardContent>
-            </Card>
+          <div className="flex flex-wrap gap-6 text-sm">
+            <div>
+              <span className="text-muted-foreground">Last Updated: </span>
+              <span className="font-medium">{formatLastUpdated(metadata.last_updated)}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Total Votes: </span>
+              <span className="font-medium">{metadata.total_votes.toLocaleString()}</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Total Models: </span>
+              <span className="font-medium">{metadata.total_models}</span>
+            </div>
           </div>
         )}
 
-        {/* Controls */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              type="text"
-              placeholder="Search models by name, ID, or organization..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Select
-              value={sortBy}
-              onValueChange={(value) => setSortBy(value as SortBy)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="elo_score">ELO Score</SelectItem>
-                <SelectItem value="vote_count">Vote Count</SelectItem>
-                <SelectItem value="organization">Organization</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={sortOrder}
-              onValueChange={(value) => setSortOrder(value as SortOrder)}
-            >
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Order" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="desc">Descending</SelectItem>
-                <SelectItem value="asc">Ascending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Search Input */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search by model name..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-12"
+          />
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+            /
+          </kbd>
         </div>
 
         {/* Error State */}
@@ -177,14 +150,49 @@ export default function LeaderboardClient() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[80px]">Rank</TableHead>
+                      <TableHead
+                        className="w-[80px] text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("rank")}
+                      >
+                        Rank{renderSortIcon("rank")}
+                      </TableHead>
                       <TableHead>Model</TableHead>
-                      <TableHead className="text-right">Score</TableHead>
-                      <TableHead className="text-right">95% CI</TableHead>
-                      <TableHead className="text-right">Votes</TableHead>
-                      <TableHead className="text-right">Win Rate</TableHead>
-                      <TableHead>Organization</TableHead>
-                      <TableHead>License</TableHead>
+                      <TableHead
+                        className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("elo_score")}
+                      >
+                        Score{renderSortIcon("elo_score")}
+                      </TableHead>
+                      <TableHead
+                        className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("elo_ci")}
+                      >
+                        95% CI{renderSortIcon("elo_ci")}
+                      </TableHead>
+                      <TableHead
+                        className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("vote_count")}
+                      >
+                        Votes{renderSortIcon("vote_count")}
+                      </TableHead>
+                      <TableHead
+                        className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("win_rate")}
+                      >
+                        Win Rate{renderSortIcon("win_rate")}
+                      </TableHead>
+                      <TableHead
+                        className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("organization")}
+                      >
+                        Organization{renderSortIcon("organization")}
+                      </TableHead>
+                      <TableHead
+                        className="text-center cursor-pointer hover:bg-zinc-800/50 select-none"
+                        onClick={() => handleSort("license")}
+                      >
+                        License{renderSortIcon("license")}
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -201,7 +209,7 @@ export default function LeaderboardClient() {
                     ) : (
                       entries.map((entry) => (
                         <TableRow key={entry.model_id}>
-                          <TableCell className="font-medium">
+                          <TableCell className="text-center font-medium">
                             {entry.rank}
                           </TableCell>
                           <TableCell>
@@ -214,22 +222,22 @@ export default function LeaderboardClient() {
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right font-semibold">
+                          <TableCell className="text-center font-semibold">
                             {entry.elo_score}
                           </TableCell>
-                          <TableCell className="text-right text-muted-foreground">
+                          <TableCell className="text-center text-muted-foreground">
                             ±{entry.elo_ci.toFixed(1)}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-center">
                             {entry.vote_count.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-center">
                             {(entry.win_rate * 100).toFixed(1)}%
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
                             <Badge variant="secondary">{entry.organization}</Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="text-center">
                             <Badge
                               variant={
                                 entry.license === "proprietary"

@@ -32,8 +32,8 @@ export function useLeaderboard(): UseLeaderboardReturn {
   const [metadata, setMetadata] = useState<LeaderboardMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortBy>("elo_score");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [sortBy, setSortBy] = useState<SortBy>("rank");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchLeaderboard = useCallback(async () => {
@@ -45,9 +45,19 @@ export function useLeaderboard(): UseLeaderboardReturn {
       setEntries(data.leaderboard);
       setMetadata(data.metadata);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch leaderboard");
-      setEntries([]);
-      setMetadata(null);
+      // If backend is not available, show empty state instead of error
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      if (errorMessage.includes("Failed to fetch") || errorMessage.includes("ERR_CONNECTION_REFUSED")) {
+        // Backend not available - show empty state
+        setEntries([]);
+        setMetadata(null);
+        setError(null);
+      } else {
+        // Real error - show error message
+        setError(errorMessage);
+        setEntries([]);
+        setMetadata(null);
+      }
     } finally {
       setIsLoading(false);
     }
