@@ -297,6 +297,12 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
   - Docker Compose configured (PostgreSQL only)
   - Repository README.md updated
   - MongoDB removed from codebase
+- 🚧 **Phase 2: Leaderboard MVP - IN PROGRESS**
+  - ✅ Phase 2.1: PostgreSQL Schema - **PR #23 (2025-10-21)**
+  - ✅ Phase 2.2: Worker - ELO Calculation - **PR #27, #28 (2025-10-21)**
+  - 🚧 Phase 2.3: Backend - Leaderboard API (In Progress)
+  - ✅ Phase 2.4: Frontend - Leaderboard UI - **PR #TBD (2025-10-21)**
+  - ⏳ Phase 2.5: Frontend - API Integration (Pending backend)
   - Alembic migrations implemented and tested
 
 **Completed PRs (Phase 0):**
