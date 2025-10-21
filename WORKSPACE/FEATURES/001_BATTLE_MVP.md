@@ -227,10 +227,10 @@ database = Database(
 ### Phase 1.1: Backend - Session & Battle Creation API
 
 **Tasks:**
-- [ ] Setup PostgreSQL connection and models
-  - [ ] Create async Database client with connection pooling
-  - [ ] Load SQLModel models from `shared/` package (sessions, battles, votes)
-  - [ ] Run Alembic migrations to create tables
+- [x] Setup PostgreSQL connection and models - **PR #18 (2025-01-21)**
+  - [x] Create async Database client with connection pooling
+  - [x] Load SQLModel models from `shared/` package (sessions, battles, votes)
+  - [x] Run Alembic migrations to create tables
 - [ ] Implement `POST /api/sessions` endpoint
   - [ ] Accept user prompt (text)
   - [ ] Create new session (session_id, title=prompt[:200])

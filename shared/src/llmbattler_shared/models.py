@@ -3,16 +3,76 @@ SQLModel models for PostgreSQL (shared between backend and worker)
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
-from sqlmodel import Field, SQLModel
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Column, Field, SQLModel
+
+
+class Session(SQLModel, table=True):
+    """
+    Session container for multiple battles (PostgreSQL)
+
+    One session can have multiple battles with different model pairs.
+    """
+    __tablename__ = "sessions"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    session_id: str = Field(unique=True, index=True, max_length=50)
+    title: str = Field(max_length=200)  # First prompt for display
+    user_id: Optional[int] = Field(default=None, index=True)  # NULL for anonymous (MVP)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_active_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+
+class Battle(SQLModel, table=True):
+    """
+    Single battle with conversation history between two models (PostgreSQL)
+
+    Conversation stored as JSONB in OpenAI-compatible format.
+    """
+    __tablename__ = "battles"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    battle_id: str = Field(unique=True, index=True, max_length=50)
+    session_id: str = Field(index=True, max_length=50)  # FK to sessions (application-level)
+    left_model_id: str = Field(max_length=255)
+    right_model_id: str = Field(max_length=255)
+    conversation: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        sa_column=Column(JSONB, nullable=False, server_default="'[]'::jsonb")
+    )
+    status: str = Field(default="ongoing", max_length=20, index=True)  # ongoing, voted, abandoned
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class Vote(SQLModel, table=True):
+    """
+    User vote on battle outcome with denormalized model IDs (PostgreSQL)
+
+    Denormalized to avoid JOIN queries in worker aggregation.
+    """
+    __tablename__ = "votes"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    vote_id: str = Field(unique=True, index=True, max_length=50)
+    battle_id: str = Field(unique=True, index=True, max_length=50)  # 1:1 relationship
+    session_id: str = Field(index=True, max_length=50)  # For analytics
+    vote: str = Field(max_length=20)  # left_better, right_better, tie, both_bad
+    left_model_id: str = Field(max_length=255)  # Denormalized from battle
+    right_model_id: str = Field(max_length=255)  # Denormalized from battle
+    processing_status: str = Field(default="pending", max_length=20, index=True)  # pending, processed, failed
+    processed_at: Optional[datetime] = Field(default=None)
+    error_message: Optional[str] = Field(default=None)
+    voted_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 
 class ModelStats(SQLModel, table=True):
     """
     Leaderboard model statistics (PostgreSQL)
 
-    Updated by worker hourly based on MongoDB votes
+    Updated by worker hourly based on votes table.
     """
     __tablename__ = "model_stats"
 
