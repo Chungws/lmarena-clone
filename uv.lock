@@ -467,12 +467,6 @@ wheels = [
 name = "llmbattler"
 version = "0.1.0"
 source = { virtual = "." }
-dependencies = [
-    { name = "openai" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "openai", specifier = ">=2.6.0" }]
 
 [[package]]
 name = "llmbattler-backend"
@@ -485,6 +479,7 @@ dependencies = [
     { name = "greenlet" },
     { name = "httpx" },
     { name = "llmbattler-shared" },
+    { name = "openai" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-multipart" },
@@ -513,6 +508,7 @@ requires-dist = [
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.28.1" },
     { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.2" },
     { name = "llmbattler-shared", editable = "shared" },
+    { name = "openai", specifier = ">=2.6.0" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic-settings", specifier = ">=2.7.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.5" },

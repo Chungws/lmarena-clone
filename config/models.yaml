@@ -6,7 +6,7 @@
 # Field descriptions:
 # - id: System internal ID (used in database)
 # - name: Display name for frontend
-# - model: Model name to send in API request (e.g., "gpt-4o-mini", "llama3.1:8b")
+# - model: Model name to send in API request (e.g., "llama3.1:8b")
 # - base_url: Base URL for LLM API endpoint
 # - api_key_env: Environment variable name for API key (null for local models)
 # - organization: Model provider/organization
@@ -14,27 +14,7 @@
 # - status: "active" or "inactive" (inactive models won't be used in battles)
 
 models:
-  # OpenAI Models
-  - id: gpt-4o-mini
-    name: GPT-4o Mini
-    model: gpt-4o-mini
-    base_url: https://api.openai.com/v1
-    api_key_env: OPENAI_API_KEY
-    organization: OpenAI
-    license: proprietary
-    status: active
-
-  # Anthropic Models (via OpenAI-compatible proxy)
-  - id: claude-3-5-sonnet
-    name: Claude 3.5 Sonnet
-    model: claude-3-5-sonnet-20241022
-    base_url: https://api.anthropic.com/v1
-    api_key_env: ANTHROPIC_API_KEY
-    organization: Anthropic
-    license: proprietary
-    status: active
-
-  # Local Ollama Models
+  # Local Ollama Models (MVP uses local LLMs only)
   - id: llama-3-1-8b
     name: Llama 3.1 8B
     model: llama3.1:8b

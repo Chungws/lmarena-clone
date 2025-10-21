@@ -5,9 +5,7 @@ description = "AI Language Model Battle Arena - Workspace Root"
 requires-python = ">=3.11"
 readme = "README.md"
 license = { text = "MIT" }
-dependencies = [
-    "openai>=2.6.0",
-]
+dependencies = []
 
 [tool.uv.workspace]
 members = ["backend", "worker", "shared"]
