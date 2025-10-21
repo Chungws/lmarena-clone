@@ -185,31 +185,32 @@ def setup_logging(logger_name: str = "llmbattler") -> logging.Logger:
   - [x] **Shared logging module** (`llmbattler_shared.logging_config`) for consistent logging
   - [x] **Package-level logging pattern:** Backend/Worker inherit from package logger
   - [x] **Code deduplication:** Worker logging 64→12 lines (81% reduction)
-- [x] Create vote aggregation script - **PR #XX (2025-10-21)** ✅
+- [x] Create vote aggregation script - **PR #27 (2025-10-21)** ✅
   - [x] Read pending votes from PostgreSQL (`processing_status = 'pending'`)
   - [x] Calculate ELO ratings using vote results
   - [x] **Calculate confidence intervals using Bradley-Terry model** (SE = 400/sqrt(n), CI = 1.96 * SE)
   - [x] Update `model_stats` in PostgreSQL
   - [x] **Mark votes as processed** (`processing_status = 'processed'`, `processed_at = NOW()`)
   - [x] **Handle errors:** Mark failed votes with `processing_status = 'failed'`, store error in `error_message`
-  - [ ] Update `worker_status` table with execution metadata (will be added with scheduler integration)
-- [x] Implement ELO calculation algorithm - **PR #XX (2025-10-21)** ✅
+  - [x] **Update `worker_status` table with execution metadata** - **PR #28 (2025-10-21)** ✅
+- [x] Implement ELO calculation algorithm - **PR #27 (2025-10-21)** ✅
   - [x] Use standard ELO formula (K-factor = 32, Initial ELO = 1500)
   - [x] Handle ties appropriately (score = 0.5)
   - [x] **Handle "both_bad" votes (score = 0.25 for both models)**
-- [ ] Add scheduler (APScheduler) - **Deferred to next PR**
+- [x] Add scheduler (APScheduler) - **PR #28 (2025-10-21)** ✅
   - [x] **Default: Run every hour at :00 (UTC)** (already in main.py)
   - [x] **Configurable interval via WORKER_INTERVAL_HOURS environment variable** (already in main.py)
-  - [ ] Integrate with ELOAggregator (connect scheduler to aggregation logic)
-  - [ ] Store last run timestamp in PostgreSQL (`worker_status` table)
-- [x] Add error handling and logging - **PR #XX (2025-10-21)** ✅
+  - [x] **Integrate with ELOAggregator** (connect scheduler to aggregation logic) - **PR #28 (2025-10-21)** ✅
+  - [x] **Store last run timestamp in PostgreSQL** (`worker_status` table) - **PR #28 (2025-10-21)** ✅
+- [x] Add error handling and logging - **PR #27 (2025-10-21)** ✅
   - [x] Log aggregation start/complete
   - [x] Log votes processed and ELO updates
   - [x] Handle database connection errors
   - [x] Handle invalid vote types and other errors
-- [x] Write tests for ELO calculation and CI calculation - **PR #XX (2025-10-21)** ✅
+- [x] Write tests for ELO calculation and CI calculation - **PR #27 (2025-10-21)** ✅
   - [x] 17 unit tests for ELO calculator (win/loss/tie/both_bad, CI calculation)
   - [x] 7 integration tests for ELO aggregator (vote processing, error handling)
+  - [x] **4 integration tests for scheduler integration** (worker_status tracking) - **PR #28 (2025-10-21)** ✅
 
 **ELO Formula:**
 ```python
