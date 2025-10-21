@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
 from llmbattler_backend.main import app
+from llmbattler_backend.services.llm_client import MockLLMClient, reset_llm_client, set_llm_client
 
 # Test database URL (use in-memory SQLite or test PostgreSQL)
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler_test"
@@ -54,6 +55,19 @@ async def db():
     # Drop all tables after test
     async with test_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.drop_all)
+
+
+@pytest.fixture(autouse=True)
+def use_mock_llm():
+    """
+    Automatically use mock LLM for all tests
+
+    This fixture runs for every test and ensures that tests
+    don't make real API calls to external LLM providers.
+    """
+    set_llm_client(MockLLMClient())
+    yield
+    reset_llm_client()  # Clean up after test
 
 
 @pytest.fixture

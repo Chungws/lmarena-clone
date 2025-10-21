@@ -74,3 +74,4 @@ backend/alembic/versions/__pycache__/
 .mcp.json
 *.png
 .claude/
+../frontend/tsconfig.tsbuildinfo
