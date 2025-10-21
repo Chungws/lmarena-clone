@@ -1,13 +1,18 @@
 """
-LLM API client for OpenAI-compatible endpoints
+LLM API client with Adapter pattern for multiple providers
+
+Supports:
+- OpenAI-compatible endpoints (OpenAI, Ollama, vLLM, etc.)
+- Future: Anthropic native, Gemini, VertexAI, etc.
 """
 
 import logging
 import time
+from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
-import httpx
 from llmbattler_shared.config import settings
+from openai import AsyncOpenAI
 
 from .model_service import ModelConfig
 
@@ -27,30 +32,57 @@ class LLMResponse:
         self.model_id = model_id
 
 
-class LLMClient:
+class LLMClientInterface(ABC):
     """
-    HTTP client for OpenAI-compatible LLM APIs
+    Abstract interface for LLM clients
+
+    Adapter pattern: allows multiple provider implementations
+    (OpenAI-compatible, Anthropic native, Gemini, etc.)
+    """
+
+    @abstractmethod
+    async def chat_completion(
+        self,
+        model_config: ModelConfig,
+        messages: List[Dict[str, str]],
+    ) -> LLMResponse:
+        """
+        Call LLM API with chat completion format
+
+        Args:
+            model_config: Model configuration
+            messages: Conversation history
+                [{"role": "user", "content": "Hello"}, ...]
+
+        Returns:
+            LLMResponse with content and latency
+
+        Raises:
+            Exception: If API call fails after retries
+        """
+        pass
+
+
+class OpenAILLMClient(LLMClientInterface):
+    """
+    OpenAI-compatible LLM client using official OpenAI SDK
 
     Supports:
     - OpenAI API (https://api.openai.com/v1)
-    - Anthropic API (via OpenAI-compatible proxy)
     - Ollama (http://localhost:11434/v1)
     - vLLM (custom endpoint)
-    - Any endpoint exposing /v1/chat/completions
+    - Any endpoint exposing OpenAI-compatible /v1/chat/completions
     """
 
     def __init__(self):
         """
-        Initialize LLM client with timeout and retry settings
+        Initialize OpenAI client
+
+        Note: Client instance is created per request to support
+        different base_url and api_key per model
         """
-        self.timeout = httpx.Timeout(
-            connect=settings.llm_connect_timeout,
-            read=settings.llm_read_timeout,
-            write=settings.llm_write_timeout,
-            pool=settings.llm_pool_timeout,
-        )
-        self.retry_attempts = settings.llm_retry_attempts
-        self.retry_backoff_base = settings.llm_retry_backoff_base
+        self.timeout = settings.llm_read_timeout
+        self.max_retries = settings.llm_retry_attempts
 
     async def chat_completion(
         self,
@@ -58,103 +90,84 @@ class LLMClient:
         messages: List[Dict[str, str]],
     ) -> LLMResponse:
         """
-        Call LLM API with OpenAI chat completion format
+        Call OpenAI-compatible API using official SDK
 
         Args:
             model_config: Model configuration
             messages: Conversation history in OpenAI format
-                [{"role": "user", "content": "Hello"}, ...]
 
         Returns:
             LLMResponse with content and latency
 
         Raises:
-            httpx.HTTPError: If API call fails after retries
+            Exception: If API call fails after retries
         """
-        url = f"{model_config.base_url.rstrip('/')}/chat/completions"
-        headers = self._build_headers(model_config)
-        payload = {
-            "model": model_config.model,
-            "messages": messages,
-            "temperature": 0.7,
-            "max_tokens": 1024,
-        }
+        # Create client with model-specific config
+        client = AsyncOpenAI(
+            base_url=model_config.base_url,
+            api_key=model_config.api_key or "dummy",  # Ollama doesn't need API key
+            timeout=self.timeout,
+            max_retries=self.max_retries,
+        )
 
-        # Retry loop with exponential backoff
-        last_error: Optional[Exception] = None
+        start_time = time.time()
 
-        for attempt in range(self.retry_attempts):
-            try:
-                start_time = time.time()
+        try:
+            response = await client.chat.completions.create(
+                model=model_config.model,
+                messages=messages,  # type: ignore
+                temperature=0.7,
+                max_tokens=1024,
+            )
 
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    response = await client.post(url, json=payload, headers=headers)
-                    response.raise_for_status()
+            latency_ms = int((time.time() - start_time) * 1000)
 
-                latency_ms = int((time.time() - start_time) * 1000)
+            content = response.choices[0].message.content or ""
 
-                # Parse OpenAI-compatible response
-                data = response.json()
-                content = data["choices"][0]["message"]["content"]
+            logger.info(
+                f"LLM API call successful: model={model_config.id}, "
+                f"latency={latency_ms}ms"
+            )
 
-                logger.info(
-                    f"LLM API call successful: model={model_config.id}, "
-                    f"latency={latency_ms}ms, attempt={attempt + 1}"
-                )
+            return LLMResponse(
+                content=content, latency_ms=latency_ms, model_id=model_config.id
+            )
 
-                return LLMResponse(content=content, latency_ms=latency_ms, model_id=model_config.id)
-
-            except (httpx.HTTPError, KeyError, IndexError) as e:
-                last_error = e
-                logger.warning(
-                    f"LLM API call failed: model={model_config.id}, "
-                    f"attempt={attempt + 1}/{self.retry_attempts}, error={str(e)}"
-                )
-
-                # Exponential backoff (1s, 2s, 4s)
-                if attempt < self.retry_attempts - 1:
-                    backoff_delay = self.retry_backoff_base * (2**attempt)
-                    logger.info(f"Retrying in {backoff_delay}s...")
-                    time.sleep(backoff_delay)
-
-        # All retries failed
-        error_msg = f"LLM API call failed after {self.retry_attempts} attempts: {last_error}"
-        logger.error(error_msg)
-        raise Exception(error_msg)
-
-    def _build_headers(self, model_config: ModelConfig) -> Dict[str, str]:
-        """
-        Build HTTP headers for LLM API request
-
-        Args:
-            model_config: Model configuration
-
-        Returns:
-            Headers dictionary
-        """
-        headers = {
-            "Content-Type": "application/json",
-        }
-
-        # Add API key if available
-        if model_config.api_key:
-            headers["Authorization"] = f"Bearer {model_config.api_key}"
-
-        return headers
+        except Exception as e:
+            latency_ms = int((time.time() - start_time) * 1000)
+            error_msg = (
+                f"LLM API call failed: model={model_config.id}, "
+                f"latency={latency_ms}ms, error={str(e)}"
+            )
+            logger.error(error_msg)
+            raise Exception(error_msg)
 
 
 # Singleton instance
-_llm_client: Optional[LLMClient] = None
+_llm_client: Optional[LLMClientInterface] = None
 
 
-def get_llm_client() -> LLMClient:
+def get_llm_client() -> LLMClientInterface:
     """
-    Get singleton LLMClient instance
+    Get singleton LLM client instance
+
+    Factory function: can be extended to support multiple providers
+    based on configuration
 
     Returns:
-        LLMClient instance
+        LLMClientInterface implementation (currently OpenAILLMClient)
+
+    Future:
+        # Based on config, return different implementations
+        if settings.llm_provider == "anthropic":
+            return AnthropicLLMClient()
+        elif settings.llm_provider == "gemini":
+            return GeminiLLMClient()
+        else:
+            return OpenAILLMClient()
     """
     global _llm_client
     if _llm_client is None:
-        _llm_client = LLMClient()
+        # Currently only OpenAI-compatible provider
+        _llm_client = OpenAILLMClient()
     return _llm_client
