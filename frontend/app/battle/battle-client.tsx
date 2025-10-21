@@ -42,13 +42,15 @@ export default function BattleClient() {
     await submitVote(vote);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (!state.sessionId) {
-        handleStartSession();
+        await handleStartSession();
       } else if (state.status === "ongoing") {
-        handleFollowUp();
+        await handleFollowUp();
+      } else if (state.status === "voted") {
+        await handleNewBattle();
       }
     }
   };
