@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquarePlus, Trophy, ChevronDown, LayoutGrid } from "lucide-react";
+import { MessageSquarePlus, Trophy, ChevronLeft, ChevronRight, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -14,6 +15,7 @@ interface SidebarProps {
 
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
 
   const navigation = [
     {
@@ -31,17 +33,22 @@ export function Sidebar({ className }: SidebarProps) {
   ];
 
   return (
-    <div className={cn("flex h-full w-64 flex-col bg-zinc-950 text-zinc-100", className)}>
+    <div className={cn(
+      "flex h-full flex-col bg-zinc-950 text-zinc-100 transition-all duration-300",
+      collapsed ? "w-16" : "w-64",
+      className
+    )}>
       {/* Header */}
       <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-2">
-          <LayoutGrid className="h-5 w-5" />
-          <span className="font-semibold">LMArena</span>
-          <ChevronDown className="h-4 w-4 text-zinc-400" />
-        </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <LayoutGrid className="h-4 w-4" />
-        </Button>
+        {!collapsed && (
+          <div className="flex items-center gap-2">
+            <Swords className="h-5 w-5" />
+            <span className="font-semibold">LLM Battler</span>
+          </div>
+        )}
+        {collapsed && (
+          <Swords className="h-5 w-5 mx-auto" />
+        )}
       </div>
 
       {/* Navigation */}
@@ -53,51 +60,53 @@ export function Sidebar({ className }: SidebarProps) {
               <Button
                 variant={item.current ? "secondary" : "ghost"}
                 className={cn(
-                  "w-full justify-start gap-3",
+                  "w-full gap-3",
+                  collapsed ? "justify-center px-2" : "justify-start",
                   item.current
                     ? "bg-zinc-800 text-zinc-100 hover:bg-zinc-800"
                     : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
                 )}
+                title={collapsed ? item.name : undefined}
               >
                 <Icon className="h-4 w-4" />
-                {item.name}
+                {!collapsed && item.name}
               </Button>
             </Link>
           );
         })}
 
-        {/* Recent Sessions - Placeholder for now */}
-        <div className="pt-4">
-          <Separator className="mb-2 bg-zinc-800" />
-          <div className="px-2 py-1 text-xs font-medium text-zinc-500">
-            Recent
+        {/* Recent Sessions - Only show when not collapsed */}
+        {!collapsed && (
+          <div className="pt-4">
+            <Separator className="mb-2 bg-zinc-800" />
+            <div className="px-2 py-1 text-xs font-medium text-zinc-500">
+              Recent
+            </div>
+            {/* Future: Recent sessions will be listed here */}
           </div>
-          {/* Future: Recent sessions will be listed here */}
-        </div>
+        )}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-zinc-800 p-4">
-        <div className="mb-3 space-y-1 text-xs text-zinc-400">
-          <p className="font-medium text-zinc-300">Take your chats anywhere</p>
-          <p className="text-zinc-500">
-            Create an account to save your chat history across your devices.
-          </p>
-        </div>
-        <Button className="w-full" variant="outline">
-          Login
+      {/* Collapse Toggle */}
+      <div className="border-t border-zinc-800 p-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setCollapsed(!collapsed)}
+          className={cn(
+            "w-full",
+            collapsed ? "justify-center px-2" : "justify-start gap-2"
+          )}
+        >
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <>
+              <ChevronLeft className="h-4 w-4" />
+              <span className="text-xs">Collapse</span>
+            </>
+          )}
         </Button>
-        <div className="mt-3 flex justify-between text-xs text-zinc-500">
-          <Link href="#" className="hover:text-zinc-300">
-            Terms of Use
-          </Link>
-          <Link href="#" className="hover:text-zinc-300">
-            Privacy
-          </Link>
-          <Link href="#" className="hover:text-zinc-300">
-            Cookies
-          </Link>
-        </div>
       </div>
     </div>
   );
