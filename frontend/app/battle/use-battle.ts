@@ -6,6 +6,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/lib/hooks/use-user";
 import * as service from "./service";
 import type {
   BattleState,
@@ -26,6 +27,7 @@ const initialState: BattleState = {
 
 export function useBattle() {
   const router = useRouter();
+  const { userId } = useUser();
   const [state, setState] = useState<BattleState>(initialState);
 
   /**
@@ -50,7 +52,7 @@ export function useBattle() {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const response = await service.createSession(prompt);
+        const response = await service.createSession(prompt, userId);
 
         const userMessage: ConversationMessage = { role: "user", text: prompt };
         const assistantMessages = convertResponsesToMessages(
@@ -77,7 +79,7 @@ export function useBattle() {
         }));
       }
     },
-    [router, convertResponsesToMessages]
+    [userId, router, convertResponsesToMessages]
   );
 
   /**

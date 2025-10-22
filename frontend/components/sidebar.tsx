@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SessionList } from "@/components/sidebar/session-list";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -75,12 +76,12 @@ export function Sidebar({ className }: SidebarProps) {
 
         {/* Recent Sessions - Only show when not collapsed */}
         {!collapsed && (
-          <div className="pt-4">
+          <div className="pt-4 flex flex-col h-full">
             <Separator className="mb-2" />
             <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
               Recent
             </div>
-            {/* Future: Recent sessions will be listed here */}
+            <SessionList />
           </div>
         )}
       </nav>
