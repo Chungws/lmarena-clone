@@ -1,48 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SessionItemComponent } from "@/components/sidebar/session-item";
-import { useUser } from "@/lib/hooks/use-user";
-import {
-  fetchSessions,
-  type SessionItem,
-} from "@/lib/services/session-service";
+import { useSessionContext } from "@/lib/contexts/session-context";
+import { useEffect } from "react";
 
 export function SessionList() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { userId } = useUser();
+  const { sessions, loading, error, selectSession, activeSessionId } =
+    useSessionContext();
 
-  const [sessions, setSessions] = useState<SessionItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Get session_id from URL query param
+  const urlSessionId = searchParams.get("session_id");
 
-  // Get active session from URL query param
-  const activeSessionId = searchParams.get("session_id");
-
+  // Sync URL session_id with SessionContext
   useEffect(() => {
-    if (!userId) return;
-
-    async function loadSessions() {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetchSessions(userId, 50, 0);
-        setSessions(response.sessions);
-      } catch (err) {
-        console.error("Failed to fetch sessions:", err);
-        setError("Failed to load sessions");
-      } finally {
-        setLoading(false);
-      }
+    if (urlSessionId !== activeSessionId) {
+      selectSession(urlSessionId);
     }
-
-    loadSessions();
-  }, [userId]);
+  }, [urlSessionId, activeSessionId, selectSession]);
 
   const handleSessionClick = (sessionId: string) => {
+    // Update SessionContext
+    selectSession(sessionId);
     // Navigate to battle page with session_id query param
     router.push(`/battle?session_id=${sessionId}`);
   };
