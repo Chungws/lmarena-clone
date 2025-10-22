@@ -76,11 +76,11 @@ export default function BattleClient() {
   );
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-none p-4 md:p-8">
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">Battle Mode</h1>
+        <div className="max-w-7xl mx-auto space-y-2">
+          <h1 className="text-3xl md:text-4xl font-bold">Battle Mode</h1>
           <p className="text-muted-foreground">
             Compare responses from two randomly selected models
           </p>
@@ -88,16 +88,20 @@ export default function BattleClient() {
 
         {/* Error Alert */}
         {state.error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="max-w-7xl mx-auto mt-4">
             <AlertDescription>{state.error}</AlertDescription>
           </Alert>
         )}
+      </div>
+
+      <div className="flex-1 overflow-auto px-4 md:px-8 pb-6">
+        <div className="max-w-7xl mx-auto space-y-6">
 
         {/* No Session - Initial Prompt */}
         {!state.sessionId && (
           <Card>
             <CardHeader>
-              <CardTitle>Start a New Battle</CardTitle>
+              <CardTitle className="text-base font-semibold">Start a New Battle</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <Textarea
@@ -127,10 +131,10 @@ export default function BattleClient() {
               {/* Left Assistant */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">
+                  <CardTitle className="text-base font-semibold">
                     Assistant A
                     {state.revealedModels && (
-                      <span className="ml-2 text-sm font-normal text-muted-foreground">
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
                         ({state.revealedModels.left})
                       </span>
                     )}
@@ -138,19 +142,19 @@ export default function BattleClient() {
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[400px] pr-4">
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {userMessages.map((userMsg, idx) => (
-                        <div key={`user-left-${idx}`} className="space-y-2">
-                          <div className="text-sm font-semibold">You:</div>
-                          <div className="text-sm bg-muted p-3 rounded-lg">
+                        <div key={`user-left-${idx}`} className="space-y-3">
+                          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">You</div>
+                          <div className="text-sm bg-accent/10 p-4 rounded-lg border border-accent/20">
                             {userMsg.text}
                           </div>
                           {leftMessages[idx] && (
                             <>
-                              <div className="text-sm font-semibold mt-2">
-                                Assistant A:
+                              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-4">
+                                Assistant A
                               </div>
-                              <div className="text-sm p-3 rounded-lg border">
+                              <div className="text-sm p-4 rounded-lg bg-card border-2">
                                 {leftMessages[idx].text}
                               </div>
                             </>
@@ -165,10 +169,10 @@ export default function BattleClient() {
               {/* Right Assistant */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">
+                  <CardTitle className="text-base font-semibold">
                     Assistant B
                     {state.revealedModels && (
-                      <span className="ml-2 text-sm font-normal text-muted-foreground">
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
                         ({state.revealedModels.right})
                       </span>
                     )}
@@ -176,19 +180,19 @@ export default function BattleClient() {
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[400px] pr-4">
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {userMessages.map((userMsg, idx) => (
-                        <div key={`user-right-${idx}`} className="space-y-2">
-                          <div className="text-sm font-semibold">You:</div>
-                          <div className="text-sm bg-muted p-3 rounded-lg">
+                        <div key={`user-right-${idx}`} className="space-y-3">
+                          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">You</div>
+                          <div className="text-sm bg-accent/10 p-4 rounded-lg border border-accent/20">
                             {userMsg.text}
                           </div>
                           {rightMessages[idx] && (
                             <>
-                              <div className="text-sm font-semibold mt-2">
-                                Assistant B:
+                              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-4">
+                                Assistant B
                               </div>
-                              <div className="text-sm p-3 rounded-lg border">
+                              <div className="text-sm p-4 rounded-lg bg-card border-2">
                                 {rightMessages[idx].text}
                               </div>
                             </>
@@ -201,108 +205,96 @@ export default function BattleClient() {
               </Card>
             </div>
 
-            {/* Follow-up or Voting */}
-            {state.status === "ongoing" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    Continue Conversation or Vote
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Follow-up Input */}
-                  <div className="space-y-2">
-                    <Textarea
-                      placeholder="Ask a follow-up question..."
-                      value={promptInput}
-                      onChange={(e) => setPromptInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      className="min-h-[100px]"
-                      disabled={state.isLoading}
-                    />
-                    <Button
-                      onClick={handleFollowUp}
-                      disabled={!promptInput.trim() || state.isLoading}
-                      variant="secondary"
-                      className="w-full"
-                    >
-                      {state.isLoading ? "Sending..." : "Send Follow-up"}
-                    </Button>
-                  </div>
+          </div>
+        )}
+        </div>
+      </div>
 
-                  {/* Voting Buttons */}
-                  <div className="pt-4 border-t">
-                    <p className="text-sm font-semibold mb-3 text-center">
-                      Which response is better?
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      <Button
-                        onClick={() => handleVote("left_better")}
-                        disabled={state.isLoading}
-                        variant="outline"
-                      >
-                        👈 A is Better
-                      </Button>
-                      <Button
-                        onClick={() => handleVote("tie")}
-                        disabled={state.isLoading}
-                        variant="outline"
-                      >
-                        🤝 Tie
-                      </Button>
-                      <Button
-                        onClick={() => handleVote("both_bad")}
-                        disabled={state.isLoading}
-                        variant="outline"
-                      >
-                        👎 Both Bad
-                      </Button>
-                      <Button
-                        onClick={() => handleVote("right_better")}
-                        disabled={state.isLoading}
-                        variant="outline"
-                      >
-                        👉 B is Better
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* After Voting - New Battle */}
-            {state.status === "voted" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Start New Battle</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Alert>
-                    <AlertDescription>
-                      Models revealed! Start a new battle with different models.
-                    </AlertDescription>
-                  </Alert>
+      {/* Sticky Bottom Controls */}
+      {state.sessionId && (
+        <div className="flex-none border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+          <div className="max-w-7xl mx-auto p-3 md:p-4">
+            {state.status === "ongoing" ? (
+              <div className="space-y-3">
+                {/* Follow-up Input */}
+                <div className="flex gap-2">
                   <Textarea
-                    placeholder="Enter a new prompt to start another battle..."
+                    placeholder="Ask a follow-up question or vote below..."
                     value={promptInput}
                     onChange={(e) => setPromptInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="min-h-[100px]"
+                    className="min-h-[60px] resize-none"
                     disabled={state.isLoading}
                   />
                   <Button
-                    onClick={handleNewBattle}
+                    onClick={handleFollowUp}
                     disabled={!promptInput.trim() || state.isLoading}
-                    className="w-full"
+                    variant="secondary"
+                    className="shrink-0"
                   >
-                    {state.isLoading ? "Starting..." : "Start New Battle"}
+                    {state.isLoading ? "Sending..." : "Send"}
                   </Button>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Voting Buttons */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <Button
+                    onClick={() => handleVote("left_better")}
+                    disabled={state.isLoading}
+                    variant="outline"
+                    size="sm"
+                  >
+                    👈 A is Better
+                  </Button>
+                  <Button
+                    onClick={() => handleVote("tie")}
+                    disabled={state.isLoading}
+                    variant="outline"
+                    size="sm"
+                  >
+                    🤝 Tie
+                  </Button>
+                  <Button
+                    onClick={() => handleVote("both_bad")}
+                    disabled={state.isLoading}
+                    variant="outline"
+                    size="sm"
+                  >
+                    👎 Both Bad
+                  </Button>
+                  <Button
+                    onClick={() => handleVote("right_better")}
+                    disabled={state.isLoading}
+                    variant="outline"
+                    size="sm"
+                  >
+                    👉 B is Better
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* After Voting - Compact New Battle */
+              <div className="flex gap-2">
+                <Textarea
+                  placeholder="Enter a new prompt to start another battle..."
+                  value={promptInput}
+                  onChange={(e) => setPromptInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="min-h-[60px] resize-none"
+                  disabled={state.isLoading}
+                />
+                <Button
+                  onClick={handleNewBattle}
+                  disabled={!promptInput.trim() || state.isLoading}
+                  className="shrink-0"
+                >
+                  {state.isLoading ? "Starting..." : "New Battle"}
+                </Button>
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { MessageSquarePlus, Trophy, ChevronLeft, ChevronRight, Swords } from "lu
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -34,7 +35,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <div className={cn(
-      "flex h-full flex-col bg-zinc-950 text-zinc-100 transition-all duration-300",
+      "flex h-full flex-col bg-card text-card-foreground border-r transition-all duration-300",
       collapsed ? "w-16" : "w-64",
       className
     )}>
@@ -61,10 +62,7 @@ export function Sidebar({ className }: SidebarProps) {
                 variant={item.current ? "secondary" : "ghost"}
                 className={cn(
                   "w-full gap-3",
-                  collapsed ? "justify-center px-2" : "justify-start",
-                  item.current
-                    ? "bg-zinc-800 text-zinc-100 hover:bg-zinc-800"
-                    : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
+                  collapsed ? "justify-center px-2" : "justify-start"
                 )}
                 title={collapsed ? item.name : undefined}
               >
@@ -78,8 +76,8 @@ export function Sidebar({ className }: SidebarProps) {
         {/* Recent Sessions - Only show when not collapsed */}
         {!collapsed && (
           <div className="pt-4">
-            <Separator className="mb-2 bg-zinc-800" />
-            <div className="px-2 py-1 text-xs font-medium text-zinc-500">
+            <Separator className="mb-2" />
+            <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
               Recent
             </div>
             {/* Future: Recent sessions will be listed here */}
@@ -87,8 +85,20 @@ export function Sidebar({ className }: SidebarProps) {
         )}
       </nav>
 
-      {/* Collapse Toggle */}
-      <div className="border-t border-zinc-800 p-2">
+      {/* Footer - Theme Toggle & Collapse */}
+      <div className="border-t p-2 space-y-2">
+        {/* Theme Toggle */}
+        <div className={cn(
+          "flex",
+          collapsed ? "justify-center" : "justify-start"
+        )}>
+          <ThemeToggle />
+          {!collapsed && (
+            <span className="ml-2 text-xs text-muted-foreground self-center">Toggle Theme</span>
+          )}
+        </div>
+
+        {/* Collapse Toggle */}
         <Button
           variant="ghost"
           size="sm"
