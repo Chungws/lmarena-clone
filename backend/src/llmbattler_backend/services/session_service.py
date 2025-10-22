@@ -7,7 +7,7 @@ import logging
 import random
 import uuid
 from datetime import UTC, datetime
-from typing import Dict
+from typing import Dict, Optional
 
 from llmbattler_shared.models import Battle, Session
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 async def create_session_with_battle(
     prompt: str,
     db: AsyncSession,
+    user_id: Optional[str] = None,
 ) -> Dict:
     """
     Create new session with first battle
@@ -36,6 +37,7 @@ async def create_session_with_battle(
     Args:
         prompt: User's initial prompt
         db: Database session
+        user_id: Optional user ID (UUID string for anonymous users)
 
     Returns:
         Dict with session_id, battle_id, message_id, responses
@@ -43,7 +45,7 @@ async def create_session_with_battle(
     Raises:
         Exception: If LLM API fails or model selection fails
     """
-    logger.info(f"Creating session with prompt: {prompt[:50]}...")
+    logger.info(f"Creating session with prompt: {prompt[:50]}... (user_id={user_id})")
 
     # Initialize repositories
     session_repo = SessionRepository(db)
@@ -54,7 +56,7 @@ async def create_session_with_battle(
     session = Session(
         session_id=session_id,
         title=prompt[:200],  # Use first 200 chars as title
-        user_id=None,  # Anonymous in MVP
+        user_id=user_id,  # Store user_id (None for anonymous without ID)
         created_at=datetime.now(UTC),
         last_active_at=datetime.now(UTC),
     )
@@ -545,4 +547,113 @@ async def vote_on_battle(
             "left": battle.left_model_id,
             "right": battle.right_model_id,
         },
+    }
+
+
+async def get_sessions_by_user(
+    user_id: str,
+    db: AsyncSession,
+    limit: int = 50,
+    offset: int = 0,
+) -> Dict:
+    """
+    Get session list for a user with pagination
+
+    Args:
+        user_id: User ID (UUID string for anonymous users)
+        db: Database session
+        limit: Maximum number of sessions to return (default 50)
+        offset: Number of sessions to skip (default 0)
+
+    Returns:
+        Dict with sessions list and total count
+    """
+    logger.info(f"Getting sessions for user {user_id} (limit={limit}, offset={offset})")
+
+    # Initialize repository
+    session_repo = SessionRepository(db)
+
+    # Get sessions with pagination
+    sessions = await session_repo.get_by_user_id(user_id, limit=limit, offset=offset)
+
+    # Get total count
+    total = await session_repo.count_by_user_id(user_id)
+
+    logger.info(f"Found {len(sessions)} sessions for user {user_id} (total: {total})")
+
+    # Convert to response format
+    session_items = [
+        {
+            "session_id": session.session_id,
+            "title": session.title,
+            "created_at": session.created_at,
+            "last_active_at": session.last_active_at,
+        }
+        for session in sessions
+    ]
+
+    return {
+        "sessions": session_items,
+        "total": total,
+    }
+
+
+async def get_battles_by_session(
+    session_id: str,
+    db: AsyncSession,
+) -> Dict:
+    """
+    Get all battles for a session with vote information
+
+    Args:
+        session_id: Session ID
+        db: Database session
+
+    Returns:
+        Dict with session_id and battles list
+
+    Raises:
+        ValueError: If session not found
+    """
+    logger.info(f"Getting battles for session {session_id}")
+
+    # Initialize repositories
+    session_repo = SessionRepository(db)
+    battle_repo = BattleRepository(db)
+    vote_repo = VoteRepository(db)
+
+    # Verify session exists
+    session = await session_repo.get_by_session_id(session_id)
+    if not session:
+        raise ValueError(f"Session not found: {session_id}")
+
+    # Get all battles for session
+    battles = await battle_repo.get_by_session_id(session_id)
+
+    logger.info(f"Found {len(battles)} battles for session {session_id}")
+
+    # Convert to response format with vote information
+    battle_items = []
+    for battle in battles:
+        battle_item = {
+            "battle_id": battle.battle_id,
+            "left_model_id": battle.left_model_id,
+            "right_model_id": battle.right_model_id,
+            "conversation": battle.conversation,
+            "status": battle.status,
+            "vote": None,
+            "created_at": battle.created_at,
+        }
+
+        # If battle is voted, get vote information
+        if battle.status == "voted":
+            vote = await vote_repo.get_by_battle_id(battle.battle_id)
+            if vote:
+                battle_item["vote"] = vote.vote
+
+        battle_items.append(battle_item)
+
+    return {
+        "session_id": session_id,
+        "battles": battle_items,
     }
