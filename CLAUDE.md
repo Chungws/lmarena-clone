@@ -147,16 +147,18 @@ Planned agents:
 - **Client:** Next.js 15 with App Router + React Server Components
 - **Backend (API Server):** FastAPI with OpenAI-compatible LLM routing
 - **AI Inference:** vLLM/Ollama servers (OpenAI-compatible API)
-- **Databases:**
-  - MongoDB: Log data (battles, responses, votes) - write-optimized
-  - PostgreSQL: Aggregated data (leaderboards, statistics) - read-optimized
-- **Worker:** Hourly cron job for MongoDB → PostgreSQL aggregation
+- **Database:** PostgreSQL (sessions, battles, votes, model_stats, worker_status)
+  - JSONB for conversation storage
+  - Denormalized vote data for performance
+- **Worker:** Hourly cron job for vote aggregation and ELO calculation
 - **Testing:** TDD with pytest (backend/worker), Playwright MCP (frontend)
 
 **Key Architectural Decisions:**
 - NO Foreign Keys (ADR-001) - use application-level relationships
+- PostgreSQL-only architecture (no MongoDB) - simplified operations
+- Session-based battle flow - multi-turn conversations
 - Blind testing - model identities hidden until after voting
-- ELO-based ranking system for leaderboards
+- ELO-based ranking system with Bradley-Terry confidence intervals
 
 🔗 **Details:** [WORKSPACE/ARCHITECTURE/](./WORKSPACE/ARCHITECTURE/)
 
@@ -164,15 +166,40 @@ Planned agents:
 
 ## 📊 Current Status
 
-**Project Phase:** Initial Setup & Documentation
+**Project Phase:** ✅ **Phase 3: Session Management UI - COMPLETED (2025-10-23)**
 **Current Branch:** `develop`
+**Latest Feature Branch:** `feature/session-management-phase-5`
 
-**Initialization Progress:**
-- ✅ Architecture design completed
-- ✅ Tech stack selected
-- 🔄 WORKSPACE documentation in progress
-- ⏳ Project structure setup pending
-- ⏳ MVP features implementation pending
+**Development Progress:**
+
+- ✅ **Phase 0: Project Initialization** - COMPLETED (2025-01-21)
+  - Architecture design, tech stack selection
+  - WORKSPACE documentation
+  - Database design (PostgreSQL-only, no FK)
+  - Project structure (uv workspace)
+
+- ✅ **Phase 1: Battle MVP** - COMPLETED (2025-10-21)
+  - Session & Battle Creation API (PR #18, #19, #21)
+  - Voting API (PR #22)
+  - Model Management System (PR #17)
+  - Frontend Battle UI (PR #23)
+
+- ✅ **Phase 2: Leaderboard MVP** - COMPLETED (2025-10-21)
+  - Worker ELO Calculation (PR #27, #28)
+  - Leaderboard API (PR #29)
+  - Frontend Leaderboard UI (PR #30)
+
+- ✅ **Phase 3: Session Management UI** - COMPLETED (2025-10-23)
+  - Backend Session List API (PR #33)
+  - Sidebar & User Management (PR #34)
+  - Session Context & API Integration (PR #35)
+  - Vote Button Hover Effects & Auto-scroll (PR #36, #37)
+  - E2E Testing & Integration (Completed)
+
+**Next Steps:**
+- Production deployment preparation
+- User authentication (replace anonymous UUID)
+- Performance optimization & monitoring
 
 🔗 **Full roadmap:** [WORKSPACE/00_ROADMAP.md](./WORKSPACE/00_ROADMAP.md)
 🔗 **Feature details:** [WORKSPACE/FEATURES/](./WORKSPACE/FEATURES/)
@@ -190,4 +217,4 @@ Planned agents:
 
 ---
 
-**Last Updated:** 2025-01-20
+**Last Updated:** 2025-10-23
