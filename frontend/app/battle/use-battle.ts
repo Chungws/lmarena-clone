@@ -7,9 +7,11 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/hooks/use-user";
+import { useSessionContext } from "@/lib/contexts/session-context";
 import * as service from "./service";
 import type {
   BattleState,
+  Battle,
   VoteOption,
   ConversationMessage,
   Response,
@@ -17,10 +19,8 @@ import type {
 
 const initialState: BattleState = {
   sessionId: null,
-  battleId: null,
-  status: "ongoing",
-  conversation: [],
-  revealedModels: null,
+  battles: [],
+  currentBattleId: null,
   isLoading: false,
   error: null,
 };
@@ -28,6 +28,7 @@ const initialState: BattleState = {
 export function useBattle() {
   const router = useRouter();
   const { userId } = useUser();
+  const { refetchSessions } = useSessionContext();
   const [state, setState] = useState<BattleState>(initialState);
 
   /**
@@ -69,7 +70,9 @@ export function useBattle() {
           error: null,
         });
 
-        router.refresh();
+        // Update URL with session_id and refresh session list
+        router.push(`/battle?session_id=${response.session_id}`);
+        await refetchSessions();
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -79,7 +82,7 @@ export function useBattle() {
         }));
       }
     },
-    [userId, router, convertResponsesToMessages]
+    [userId, router, convertResponsesToMessages, refetchSessions]
   );
 
   /**
@@ -219,6 +222,70 @@ export function useBattle() {
     setState(initialState);
   }, []);
 
+  /**
+   * Load session from battles data
+   */
+  const loadSession = useCallback((sessionId: string, battles: any[]) => {
+    // If no sessionId, reset to initial state
+    if (!sessionId) {
+      setState(initialState);
+      return;
+    }
+
+    if (battles.length === 0) {
+      setState({
+        sessionId,
+        battleId: null,
+        status: "ongoing",
+        conversation: [],
+        revealedModels: null,
+        isLoading: false,
+        error: null,
+      });
+      return;
+    }
+
+    // Accumulate ALL conversations from ALL battles in this session
+    const allConversations: ConversationMessage[] = [];
+
+    for (const battle of battles) {
+      const battleMessages: ConversationMessage[] = battle.conversation.map((msg: any) => {
+        if (msg.role === "user") {
+          return { role: "user" as const, text: msg.content };
+        } else {
+          return {
+            role: "assistant" as const,
+            position: msg.position as "left" | "right",
+            text: msg.content,
+          };
+        }
+      });
+      allConversations.push(...battleMessages);
+    }
+
+    // Get the most recent battle for status and metadata
+    const latestBattle = battles[battles.length - 1];
+
+    // Set revealed models if latest battle is voted
+    const revealedModels =
+      latestBattle.status === "voted"
+        ? {
+            left: latestBattle.left_model_id,
+            right: latestBattle.right_model_id,
+          }
+        : null;
+
+    setState({
+      sessionId,
+      battleId: latestBattle.battle_id,
+      status: latestBattle.status,
+      conversation: allConversations,
+      revealedModels,
+      isLoading: false,
+      error: null,
+    });
+  }, []);
+
   return {
     state,
     startSession,
@@ -226,5 +293,6 @@ export function useBattle() {
     sendFollowUp,
     submitVote,
     reset,
+    loadSession,
   };
 }
