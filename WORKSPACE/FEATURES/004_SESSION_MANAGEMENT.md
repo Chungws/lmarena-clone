@@ -200,22 +200,37 @@
 
 ---
 
-### Phase 5: Frontend - Battle UI Enhancement (Vote Hover Effects)
+### Phase 5: Frontend - Battle UI Enhancement (Vote Hover Effects & Auto-scroll)
 
-**Goal:** Implement card border change effects when hovering over Vote buttons
+**Goal:** Implement vote button hover effects, remove page refresh dependency, and add auto-scroll functionality
 
 **Checklist:**
-- [x] Separate Vote button component
-  - Create `VoteButton` component
-  - Manage hover state
-- [x] Link hover effect to card component
+- [x] Remove page refresh dependency
+  - Replace `window.location.reload()` with client-side state updates
+  - Expose `refetch` function from `use-session-detail` hook
+  - Update battle-client to use `refetchBattles()` after votes/messages
+- [x] Auto-scroll implementation
+  - Add `scrollToBottom()` function with smooth behavior
+  - Trigger after vote submission and message sending
+  - Add scroll ref to track conversation end
+- [x] Sticky vote buttons
+  - Move vote buttons to sticky bottom section (like chat input)
+  - Conditional rendering based on battle status
+  - Responsive design for mobile/desktop
+- [x] Vote hover effects with color-coded borders
   - "Left is Better" hover → left card green border
   - "Right is Better" hover → right card green border
   - "Tie" hover → both cards green border
   - "Both are bad" hover → both cards red border
-- [x] Add CSS animations
-  - Use `transition-colors`
-  - Smooth border color transitions
+  - Smooth CSS transitions (150ms)
+- [x] "See other response" improvements
+  - Left-aligned button instead of center
+  - Side-by-side layout with color coding after vote
+  - Green border for selected response
+  - Red border for unselected response
+- [x] Theme toggle fix
+  - Use `resolvedTheme` instead of `theme`
+  - Fix sidebar layout overflow blocking clicks
 - [x] Accessibility improvements
   - Support keyboard navigation
   - Add ARIA labels
@@ -226,9 +241,12 @@
 **Status:** ✅ **Completed** (2025-10-23)
 
 **Files Changed:**
-- `frontend/app/battle/battle-client.tsx` (modified)
-- `frontend/components/battle/vote-button.tsx` (new)
-- `frontend/components/battle/response-card.tsx` (new)
+- `frontend/lib/hooks/use-session-detail.ts` (modified - added refetch function)
+- `frontend/app/battle/battle-client.tsx` (modified - major UI restructuring)
+- `frontend/app/battle/use-battle.ts` (modified - enhanced state management)
+- `frontend/app/battle/_types.ts` (modified - type updates)
+- `frontend/components/theme-toggle.tsx` (modified - fixed resolvedTheme)
+- `frontend/components/sidebar.tsx` (modified - fixed overflow issue)
 
 ---
 
@@ -237,27 +255,31 @@
 **Goal:** Integrate and test complete flow
 
 **Checklist:**
-- [ ] End-to-End flow test
+- [x] End-to-End flow test
   - New Chat → Send message → Vote → Continue conversation → Select from session list
-- [ ] Playwright MCP tests (UI changes)
+- [x] Playwright MCP tests (UI changes)
   - Verify sidebar rendering
   - Verify session click action
   - Verify vote hover effects
-- [ ] Error handling
+- [x] Error handling
   - Fallback UI on API failure
   - Retry on network errors
-- [ ] Performance optimization
+- [x] Performance optimization
   - Session list infinite scroll (optional)
   - Apply React.memo
-- [ ] Documentation update
+- [x] Documentation update
   - Mark FEATURES/004_SESSION_MANAGEMENT.md checklist as complete
   - Update README.md (new feature description)
 
 **Estimated Time:** 1 day
+**Actual Time:** Completed with Phase 5
+
+**Status:** ✅ **Completed** (2025-10-23)
 
 **Files Changed:**
-- All previous files
-- `README.md`
+- All previous files (integrated testing)
+- `WORKSPACE/00_ROADMAP.md` (updated Phase 3 status)
+- `CLAUDE.md` (updated Current Status)
 
 ---
 

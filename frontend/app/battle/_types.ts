@@ -50,12 +50,19 @@ export interface ConversationMessage {
   timestamp?: string;
 }
 
+export interface Battle {
+  battle_id: string;
+  left_model_id: string;
+  right_model_id: string;
+  conversation: ConversationMessage[];
+  status: BattleStatus;
+  vote: VoteOption | null;
+}
+
 export interface BattleState {
   sessionId: string | null;
-  battleId: string | null;
-  status: BattleStatus;
-  conversation: ConversationMessage[];
-  revealedModels: { left: string; right: string } | null;
+  battles: Battle[];
+  currentBattleId: string | null;
   isLoading: boolean;
   error: string | null;
 }

@@ -54,29 +54,31 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-2">
-        {navigation.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link key={item.name} href={item.href}>
-              <Button
-                variant={item.current ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full gap-3",
-                  collapsed ? "justify-center px-2" : "justify-start"
-                )}
-                title={collapsed ? item.name : undefined}
-              >
-                <Icon className="h-4 w-4" />
-                {!collapsed && item.name}
-              </Button>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 flex flex-col space-y-1 px-2 overflow-hidden">
+        <div className="space-y-1">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link key={item.name} href={item.href}>
+                <Button
+                  variant={item.current ? "secondary" : "ghost"}
+                  className={cn(
+                    "w-full gap-3",
+                    collapsed ? "justify-center px-2" : "justify-start"
+                  )}
+                  title={collapsed ? item.name : undefined}
+                >
+                  <Icon className="h-4 w-4" />
+                  {!collapsed && item.name}
+                </Button>
+              </Link>
+            );
+          })}
+        </div>
 
         {/* Recent Sessions - Only show when not collapsed */}
         {!collapsed && (
-          <div className="pt-4 flex flex-col h-full">
+          <div className="pt-4 flex flex-col flex-1 min-h-0">
             <Separator className="mb-2" />
             <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
               Recent
