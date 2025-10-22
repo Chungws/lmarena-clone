@@ -13,12 +13,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { VoteButton } from "@/components/battle/vote-button";
+import { ResponseCard } from "@/components/battle/response-card";
 import type { VoteOption } from "./_types";
 
 export default function BattleClient() {
   const { state, startSession, startNewBattle, sendFollowUp, submitVote } =
     useBattle();
   const [promptInput, setPromptInput] = useState("");
+  const [hoveredVote, setHoveredVote] = useState<VoteOption | null>(null);
 
   const handleStartSession = async () => {
     if (!promptInput.trim()) return;
@@ -75,6 +78,21 @@ export default function BattleClient() {
     [state.conversation]
   );
 
+  // Calculate highlight state based on hovered vote
+  const leftHighlight = useMemo(() => {
+    if (!hoveredVote) return "none";
+    if (hoveredVote === "left_better" || hoveredVote === "tie") return "green";
+    if (hoveredVote === "both_bad") return "red";
+    return "none";
+  }, [hoveredVote]);
+
+  const rightHighlight = useMemo(() => {
+    if (!hoveredVote) return "none";
+    if (hoveredVote === "right_better" || hoveredVote === "tie") return "green";
+    if (hoveredVote === "both_bad") return "red";
+    return "none";
+  }, [hoveredVote]);
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-none p-4 md:p-8">
@@ -128,81 +146,20 @@ export default function BattleClient() {
           <div className="space-y-6">
             {/* Conversation Display */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Left Assistant */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold">
-                    Assistant A
-                    {state.revealedModels && (
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        ({state.revealedModels.left})
-                      </span>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[400px] pr-4">
-                    <div className="space-y-6">
-                      {userMessages.map((userMsg, idx) => (
-                        <div key={`user-left-${idx}`} className="space-y-3">
-                          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">You</div>
-                          <div className="text-sm bg-accent/10 p-4 rounded-lg border border-accent/20">
-                            {userMsg.text}
-                          </div>
-                          {leftMessages[idx] && (
-                            <>
-                              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-4">
-                                Assistant A
-                              </div>
-                              <div className="text-sm p-4 rounded-lg bg-card border-2">
-                                {leftMessages[idx].text}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-
-              {/* Right Assistant */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold">
-                    Assistant B
-                    {state.revealedModels && (
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        ({state.revealedModels.right})
-                      </span>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[400px] pr-4">
-                    <div className="space-y-6">
-                      {userMessages.map((userMsg, idx) => (
-                        <div key={`user-right-${idx}`} className="space-y-3">
-                          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">You</div>
-                          <div className="text-sm bg-accent/10 p-4 rounded-lg border border-accent/20">
-                            {userMsg.text}
-                          </div>
-                          {rightMessages[idx] && (
-                            <>
-                              <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mt-4">
-                                Assistant B
-                              </div>
-                              <div className="text-sm p-4 rounded-lg bg-card border-2">
-                                {rightMessages[idx].text}
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
+              <ResponseCard
+                title="Assistant A"
+                revealedModel={state.revealedModels?.left}
+                userMessages={userMessages}
+                assistantMessages={leftMessages}
+                highlight={leftHighlight}
+              />
+              <ResponseCard
+                title="Assistant B"
+                revealedModel={state.revealedModels?.right}
+                userMessages={userMessages}
+                assistantMessages={rightMessages}
+                highlight={rightHighlight}
+              />
             </div>
 
           </div>
@@ -238,38 +195,38 @@ export default function BattleClient() {
 
                 {/* Voting Buttons */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  <Button
+                  <VoteButton
+                    label="A is Better"
+                    voteOption="left_better"
                     onClick={() => handleVote("left_better")}
+                    onHoverChange={setHoveredVote}
                     disabled={state.isLoading}
-                    variant="outline"
-                    size="sm"
-                  >
-                    👈 A is Better
-                  </Button>
-                  <Button
+                    icon="👈"
+                  />
+                  <VoteButton
+                    label="Tie"
+                    voteOption="tie"
                     onClick={() => handleVote("tie")}
+                    onHoverChange={setHoveredVote}
                     disabled={state.isLoading}
-                    variant="outline"
-                    size="sm"
-                  >
-                    🤝 Tie
-                  </Button>
-                  <Button
+                    icon="🤝"
+                  />
+                  <VoteButton
+                    label="Both Bad"
+                    voteOption="both_bad"
                     onClick={() => handleVote("both_bad")}
+                    onHoverChange={setHoveredVote}
                     disabled={state.isLoading}
-                    variant="outline"
-                    size="sm"
-                  >
-                    👎 Both Bad
-                  </Button>
-                  <Button
+                    icon="👎"
+                  />
+                  <VoteButton
+                    label="B is Better"
+                    voteOption="right_better"
                     onClick={() => handleVote("right_better")}
+                    onHoverChange={setHoveredVote}
                     disabled={state.isLoading}
-                    variant="outline"
-                    size="sm"
-                  >
-                    👉 B is Better
-                  </Button>
+                    icon="👉"
+                  />
                 </div>
               </div>
             ) : (
