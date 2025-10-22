@@ -270,6 +270,62 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 
 ---
 
+### 🚀 Phase 3: Session Management UI (In Planning)
+
+**Status:** 📝 Planning - Feature spec created (2025-10-22)
+**Goal:** ChatGPT-like session sidebar with conversation history
+
+**Progress:**
+- ✅ Feature specification created - [FEATURES/004_SESSION_MANAGEMENT.md](./FEATURES/004_SESSION_MANAGEMENT.md)
+- ⏳ Phase 3.1: Backend - Session List API (Pending)
+- ⏳ Phase 3.2: Frontend - Sidebar Component (Pending)
+- ⏳ Phase 3.3: Frontend - Anonymous User ID Management (Pending)
+- ⏳ Phase 3.4: Frontend - Session Context & API Integration (Pending)
+- ⏳ Phase 3.5: Frontend - Battle UI Enhancement (Vote Hover Effects) (Pending)
+- ⏳ Phase 3.6: Integration & E2E Testing (Pending)
+
+**Key Features:**
+1. **Session Sidebar (Frontend)**
+   - "New Chat" button for starting fresh sessions
+   - Session list grouped by date (Today, Yesterday, Previous 7 Days, etc.)
+   - Click session to view conversation history
+   - Active session highlighting
+   - Responsive design (mobile hamburger menu)
+
+2. **Anonymous User Management (Frontend)**
+   - Generate UUID v4 for anonymous users
+   - Store in localStorage (`llmbattler_user_id`)
+   - Associate sessions with anonymous user ID
+
+3. **Session List API (Backend)**
+   - `GET /api/sessions` - List user's sessions
+     - Filter by user_id (anonymous UUID)
+     - Sort by last_active_at DESC
+     - Pagination support
+   - `GET /api/sessions/{session_id}/battles` - Get all battles in session
+     - Return conversation history for each battle
+     - Include vote information if available
+
+4. **Enhanced Battle UI (Frontend)**
+   - Vote button hover effects:
+     - "Left is Better" → Left card green border
+     - "Right is Better" → Right card green border
+     - "Tie" → Both cards green border
+     - "Both are bad" → Both cards red border
+   - Smooth CSS transitions
+   - Keyboard navigation support
+
+5. **Post-Vote Conversation Flow**
+   - Vote reveals model names
+   - Continue conversation after voting
+   - New vote becomes available for follow-up messages
+
+**Estimated Time:** 1.5-2 weeks (7-8 days)
+
+**Details:** [FEATURES/004_SESSION_MANAGEMENT.md](./FEATURES/004_SESSION_MANAGEMENT.md)
+
+---
+
 ### 💡 Future Features (Post-MVP)
 
 #### 1. Multi-Modal Support
@@ -278,7 +334,7 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 - **Estimated Time:** 3-4 weeks
 
 #### 2. User Authentication
-- **Goal:** Track user votes, prevent spam
+- **Goal:** Track user votes, prevent spam, replace anonymous UUID with real accounts
 - **Priority:** High (for production)
 - **Estimated Time:** 1-2 weeks
 
@@ -316,7 +372,7 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 
 ## 📊 Current Status
 
-**Active Phase:** 🎉 **MVP COMPLETE** - Phase 0, 1, 2 All Completed!
+**Active Phase:** 🚀 **Phase 3: Session Management UI (Planning)**
 **Current Branch:** `develop`
 **Latest Update:** 2025-10-22
 
@@ -345,7 +401,16 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
   - ✅ Phase 2.4: Frontend - Leaderboard UI - **PR #30**
   - ✅ Phase 2.5: Frontend - API Integration - **Merged into 2.4**
 
-**Completed PRs (All Phases):**
+- 📝 **Phase 3: Session Management UI - IN PLANNING (2025-10-22)**
+  - ✅ Feature specification completed - **FEATURES/004_SESSION_MANAGEMENT.md**
+  - ⏳ Phase 3.1: Backend - Session List API (Pending)
+  - ⏳ Phase 3.2: Frontend - Sidebar Component (Pending)
+  - ⏳ Phase 3.3: Frontend - Anonymous User ID Management (Pending)
+  - ⏳ Phase 3.4: Frontend - Session Context & API Integration (Pending)
+  - ⏳ Phase 3.5: Frontend - Battle UI Enhancement (Pending)
+  - ⏳ Phase 3.6: Integration & E2E Testing (Pending)
+
+**Completed PRs (Phases 0-2):**
 - **Phase 0:** PR #13, #14, #15, #16
 - **Phase 1:** PR #17, #18, #19, #21, #22, #23
 - **Phase 2:** PR #24, #27, #28, #29, #30
@@ -357,12 +422,11 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 - ✅ Full-stack implementation (Backend + Frontend + Worker)
 
 **Next Steps:**
-1. 🧪 **End-to-End Testing** - Test complete user flow (battle → vote → leaderboard update)
-2. 🚀 **Production Deployment** - Deploy MVP to production environment
-3. 🎨 **UI/UX Improvements** - Enhance user experience based on feedback
-4. 📊 **Analytics & Monitoring** - Add logging, monitoring, and analytics
-5. 🔐 **User Authentication** - Implement auth to prevent spam and track users (Post-MVP Feature #2)
-6. 🎯 **Additional Features** - Consider Future Features (Multi-Modal, Advanced Categories, etc.)
+1. 🚀 **Phase 3 Development** - Implement Session Management UI (ChatGPT-like sidebar)
+2. 🧪 **End-to-End Testing** - Test complete user flow with session persistence
+3. 🎨 **UI/UX Polish** - Refine battle UI with vote hover effects
+4. 📊 **Analytics & Monitoring** - Add logging and monitoring
+5. 🔐 **User Authentication** - Replace anonymous UUID with real accounts (Future)
 
 ---
 

@@ -21,7 +21,7 @@ class Session(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     session_id: str = Field(unique=True, index=True, max_length=50)
     title: str = Field(max_length=200)  # First prompt for display
-    user_id: Optional[int] = Field(default=None, index=True)  # NULL for anonymous (MVP)
+    user_id: Optional[str] = Field(default=None, index=True, max_length=50)  # Anonymous user UUID string
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
         sa_column=Column(DateTime(timezone=True), nullable=False)

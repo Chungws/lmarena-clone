@@ -23,6 +23,7 @@ class Response(BaseModel):
 class SessionCreate(BaseModel):
     """Request schema for creating a new session"""
     prompt: str = Field(..., min_length=1, max_length=10000)
+    user_id: Optional[str] = None  # Optional anonymous user ID (UUID string)
 
 
 class SessionResponse(BaseModel):
@@ -31,6 +32,20 @@ class SessionResponse(BaseModel):
     battle_id: str
     message_id: str  # Always "msg_1" for first message
     responses: List[Response]
+
+
+class SessionItem(BaseModel):
+    """Single session item in session list"""
+    session_id: str
+    title: str
+    created_at: datetime
+    last_active_at: datetime
+
+
+class SessionListResponse(BaseModel):
+    """Response schema for GET /api/sessions"""
+    sessions: List[SessionItem]
+    total: int
 
 
 # ==================== Battle Schemas ====================
@@ -60,6 +75,23 @@ class FollowUpResponse(BaseModel):
     responses: List[Response]
     message_count: int  # Total messages in conversation (1-6)
     max_messages: int = 6  # Maximum allowed messages
+
+
+class BattleItem(BaseModel):
+    """Single battle item in battle list"""
+    battle_id: str
+    left_model_id: str
+    right_model_id: str
+    conversation: List[dict]
+    status: str
+    vote: Optional[str] = None  # Only present if status is 'voted'
+    created_at: datetime
+
+
+class BattleListResponse(BaseModel):
+    """Response schema for GET /api/sessions/{session_id}/battles"""
+    session_id: str
+    battles: List[BattleItem]
 
 
 # ==================== Vote Schemas ====================

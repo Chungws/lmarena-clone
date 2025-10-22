@@ -75,3 +75,4 @@ backend/alembic/versions/__pycache__/
 *.png
 .claude/
 tsconfig.tsbuildinfo
+*.txt
