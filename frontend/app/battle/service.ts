@@ -17,9 +17,13 @@ import type {
  * Create a new session with initial prompt
  */
 export async function createSession(
-  prompt: string
+  prompt: string,
+  userId?: string
 ): Promise<CreateSessionResponse> {
-  return await apiClient.post<CreateSessionResponse>("/api/sessions", { prompt });
+  return await apiClient.post<CreateSessionResponse>("/api/sessions", {
+    prompt,
+    user_id: userId,
+  });
 }
 
 /**
