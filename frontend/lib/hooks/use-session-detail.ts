@@ -17,8 +17,8 @@ export function useSessionDetail(sessionId: string | null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Reset state when no session selected
+  // Fetch function that can be called manually
+  const fetchBattles = async () => {
     if (!sessionId) {
       setBattles([]);
       setLoading(false);
@@ -26,27 +26,28 @@ export function useSessionDetail(sessionId: string | null) {
       return;
     }
 
-    // Fetch battles for selected session
-    async function loadBattles() {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetchSessionBattles(sessionId);
-        setBattles(response.battles);
-      } catch (err) {
-        console.error("Failed to fetch session battles:", err);
-        setError("Failed to load session");
-      } finally {
-        setLoading(false);
-      }
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetchSessionBattles(sessionId);
+      setBattles(response.battles);
+    } catch (err) {
+      console.error("Failed to fetch session battles:", err);
+      setError("Failed to load session");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    loadBattles();
+  useEffect(() => {
+    fetchBattles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
   return {
     battles,
     loading,
     error,
+    refetch: fetchBattles,
   };
 }
