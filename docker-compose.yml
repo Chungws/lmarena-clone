@@ -1,7 +1,9 @@
-# Full Stack Docker Compose
+# Production Docker Compose
+#
+# IMPORTANT: Copy .env.prod.example to .env.prod and configure before running
 #
 # Start all services:
-#   docker compose up -d
+#   docker compose --env-file .env.prod up -d
 #
 # View logs:
 #   docker compose logs -f [service_name]
@@ -14,7 +16,7 @@
 #
 # Rebuild services:
 #   docker compose build
-#   docker compose up -d
+#   docker compose --env-file .env.prod up -d
 
 services:
   # Database
@@ -22,22 +24,28 @@ services:
     image: postgres:16-alpine
     container_name: llmbattler-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: llmbattler
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-llmbattler}
       POSTGRES_INITDB_ARGS: "-E UTF8"
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
     restart: unless-stopped
     networks:
       - llmbattler
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+          cpus: '2.0'
 
   # Backend API
   backend:
@@ -46,16 +54,42 @@ services:
       dockerfile: backend/Dockerfile
     container_name: llmbattler-backend
     environment:
-      - POSTGRES_URI=postgresql+asyncpg://postgres:postgres@postgres:5432/llmbattler
-      - CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - POSTGRES_URI=${POSTGRES_URI:?POSTGRES_URI is required}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - MODELS_CONFIG_PATH=${MODELS_CONFIG_PATH:-/app/backend/config/models.yaml}
+      - LLM_CONNECT_TIMEOUT=${LLM_CONNECT_TIMEOUT:-10}
+      - LLM_READ_TIMEOUT=${LLM_READ_TIMEOUT:-60}
+      - LLM_WRITE_TIMEOUT=${LLM_WRITE_TIMEOUT:-10}
+      - LLM_POOL_TIMEOUT=${LLM_POOL_TIMEOUT:-10}
+      - LLM_RETRY_ATTEMPTS=${LLM_RETRY_ATTEMPTS:-3}
+      - LLM_RETRY_BACKOFF_BASE=${LLM_RETRY_BACKOFF_BASE:-1.5}
+      - MAX_FOLLOW_UPS=${MAX_FOLLOW_UPS:-10}
+      - USE_MOCK_LLM=${USE_MOCK_LLM:-false}
+      - POSTGRES_POOL_SIZE=${POSTGRES_POOL_SIZE:-10}
+      - POSTGRES_MAX_OVERFLOW=${POSTGRES_MAX_OVERFLOW:-20}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend/config:/app/backend/config:ro
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
     networks:
       - llmbattler
+    deploy:
+      resources:
+        limits:
+          memory: ${BACKEND_MEMORY_LIMIT:-2g}
+          cpus: ${BACKEND_CPU_LIMIT:-2.0}
 
   # Worker (ELO aggregation)
   worker:
@@ -64,15 +98,58 @@ services:
       dockerfile: worker/Dockerfile
     container_name: llmbattler-worker
     environment:
-      - POSTGRES_URI=postgresql+asyncpg://postgres:postgres@postgres:5432/llmbattler
-      - WORKER_INTERVAL_HOURS=1
-      - WORKER_TIMEZONE=UTC
+      - POSTGRES_URI=${POSTGRES_URI:?POSTGRES_URI is required}
+      - WORKER_INTERVAL_HOURS=${WORKER_INTERVAL_HOURS:-1}
+      - WORKER_TIMEZONE=${WORKER_TIMEZONE:-UTC}
+      - INITIAL_ELO=${INITIAL_ELO:-1500}
+      - K_FACTOR=${K_FACTOR:-32}
+      - MIN_VOTES_FOR_LEADERBOARD=${MIN_VOTES_FOR_LEADERBOARD:-5}
+      - POSTGRES_POOL_SIZE=${POSTGRES_POOL_SIZE:-5}
+      - POSTGRES_MAX_OVERFLOW=${POSTGRES_MAX_OVERFLOW:-10}
     depends_on:
       postgres:
+        condition: service_healthy
+      backend:
         condition: service_healthy
     restart: unless-stopped
     networks:
       - llmbattler
+    deploy:
+      resources:
+        limits:
+          memory: ${WORKER_MEMORY_LIMIT:-1g}
+          cpus: ${WORKER_CPU_LIMIT:-1.0}
+
+  # Ollama (Self-hosted LLM inference)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: llmbattler-ollama
+    environment:
+      - OLLAMA_MODELS=${OLLAMA_MODELS:-llama3.1:8b,qwen2.5:7b}
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./ollama-init.sh:/ollama-init.sh:ro
+    entrypoint: ["/bin/bash", "/ollama-init.sh"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - llmbattler
+    deploy:
+      resources:
+        limits:
+          memory: ${OLLAMA_MEMORY_LIMIT:-8g}
+          cpus: ${OLLAMA_CPU_LIMIT:-4.0}
+    # Uncomment if you have NVIDIA GPU
+    # runtime: nvidia
+    # environment:
+    #   - NVIDIA_VISIBLE_DEVICES=all
 
   # Frontend
   frontend:
@@ -80,17 +157,29 @@ services:
       context: frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=http://localhost:8000
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
     container_name: llmbattler-frontend
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
     networks:
       - llmbattler
+    deploy:
+      resources:
+        limits:
+          memory: ${FRONTEND_MEMORY_LIMIT:-1g}
+          cpus: ${FRONTEND_CPU_LIMIT:-1.0}
 
 networks:
   llmbattler:
@@ -100,3 +189,5 @@ networks:
 volumes:
   postgres_data:
     name: llmbattler_postgres_data
+  ollama_data:
+    name: llmbattler_ollama_data

@@ -39,6 +39,10 @@ env/
 .env
 .env.local
 .env.*.local
+.env.prod
+
+# Production configuration (contains sensitive settings)
+backend/config/models.yaml
 
 # Testing
 .pytest_cache/
