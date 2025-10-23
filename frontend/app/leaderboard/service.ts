@@ -3,36 +3,16 @@
  */
 
 import { apiClient } from "@/lib/apiClient";
-import type {
-  LeaderboardResponse,
-  SortBy,
-  SortOrder,
-} from "./_types";
+import type { LeaderboardResponse } from "./_types";
 
 /**
  * Fetch leaderboard data
  *
- * @param sortBy - Field to sort by (default: "rank")
- * @param order - Sort order (default: "asc")
- * @returns Leaderboard data with metadata
+ * Backend always returns data sorted by ELO score descending (rank 1 = highest ELO)
+ * Client-side sorting is handled in use-leaderboard hook
+ *
+ * @returns Leaderboard data with metadata (sorted by ELO score)
  */
-export async function getLeaderboard(
-  sortBy: SortBy = "rank",
-  order: SortOrder = "asc"
-): Promise<LeaderboardResponse> {
-  // Map 'rank' to 'elo_score' for backend (rank is derived from elo_score)
-  const backendSortBy = sortBy === "rank" ? "elo_score" : sortBy;
-  // Reverse order for rank (asc rank = desc elo_score)
-  const backendOrder = sortBy === "rank"
-    ? (order === "asc" ? "desc" : "asc")
-    : order;
-
-  const params = new URLSearchParams({
-    sort_by: backendSortBy,
-    order: backendOrder,
-  });
-
-  return await apiClient.get<LeaderboardResponse>(
-    `/api/leaderboard?${params.toString()}`
-  );
+export async function getLeaderboard(): Promise<LeaderboardResponse> {
+  return await apiClient.get<LeaderboardResponse>("/api/leaderboard");
 }

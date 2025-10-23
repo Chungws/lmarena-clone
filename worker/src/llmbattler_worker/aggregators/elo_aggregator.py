@@ -16,6 +16,7 @@ Workflow:
 
 import logging
 from datetime import UTC, datetime
+from typing import Dict, Optional
 
 from llmbattler_shared.models import ModelStats, Vote
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,14 +34,21 @@ class ELOAggregator:
     Processes pending votes and updates model statistics in PostgreSQL.
     """
 
-    def __init__(self, session: AsyncSession):
+    def __init__(
+        self,
+        session: AsyncSession,
+        model_configs: Optional[Dict[str, Dict[str, str]]] = None,
+    ):
         """
         Initialize ELO aggregator
 
         Args:
             session: Async SQLAlchemy session for PostgreSQL
+            model_configs: Optional dict mapping model_id -> {organization, license}
+                          If None, defaults to "Unknown" values
         """
         self.session = session
+        self.model_configs = model_configs or {}
 
     async def process_pending_votes(self) -> int:
         """
@@ -186,8 +194,16 @@ class ELOAggregator:
         if stats is not None:
             return stats
 
+        # Get model config info if available
+        model_info = self.model_configs.get(model_id, {})
+        organization = model_info.get("organization", "Unknown")
+        license_type = model_info.get("license", "Unknown")
+
         # Create new stats with default values
-        logger.info(f"Creating new ModelStats for model: {model_id}")
+        logger.info(
+            f"Creating new ModelStats for model: {model_id} "
+            f"(org: {organization}, license: {license_type})"
+        )
         stats = ModelStats(
             model_id=model_id,
             elo_score=INITIAL_ELO,
@@ -197,8 +213,8 @@ class ELOAggregator:
             loss_count=0,
             tie_count=0,
             win_rate=0.0,
-            organization="Unknown",  # TODO: Get from models table
-            license="Unknown",  # TODO: Get from models table
+            organization=organization,
+            license=license_type,
         )
         self.session.add(stats)
         await self.session.flush()  # Flush to get ID assigned
