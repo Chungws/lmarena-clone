@@ -3,10 +3,10 @@ Tests for leaderboard API endpoints
 """
 
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from llmbattler_shared.models import ModelStats
+from llmbattler_shared.schemas import LeaderboardMetadata, LeaderboardResponse, ModelStatsResponse
 
 
 def test_get_leaderboard_success(client: TestClient):
@@ -20,60 +20,55 @@ def test_get_leaderboard_success(client: TestClient):
     4. Models sorted by elo_score descending
     5. Includes metadata (total_models, total_votes, last_updated)
     """
-    # Arrange - Mock repository data
-    mock_models = [
-        ModelStats(
-            id=1,
-            model_id="gpt-4o",
-            elo_score=1654,
-            elo_ci=12.3,
-            vote_count=1234,
-            win_count=850,
-            loss_count=300,
-            tie_count=84,
-            win_rate=0.68,
-            organization="OpenAI",
-            license="proprietary",
-            updated_at=datetime.now(UTC),
+    # Arrange - Mock leaderboard response
+    mock_leaderboard = LeaderboardResponse(
+        leaderboard=[
+            ModelStatsResponse(
+                rank=1,
+                model_id="gpt-4o",
+                model_name="gpt-4o",
+                elo_score=1654,
+                elo_ci=12.3,
+                vote_count=1234,
+                win_rate=0.68,
+                organization="OpenAI",
+                license="proprietary",
+            ),
+            ModelStatsResponse(
+                rank=2,
+                model_id="claude-3-5-sonnet",
+                model_name="claude-3-5-sonnet",
+                elo_score=1632,
+                elo_ci=15.7,
+                vote_count=987,
+                win_rate=0.64,
+                organization="Anthropic",
+                license="proprietary",
+            ),
+            ModelStatsResponse(
+                rank=3,
+                model_id="llama-3-1-70b",
+                model_name="llama-3-1-70b",
+                elo_score=1580,
+                elo_ci=18.9,
+                vote_count=550,
+                win_rate=0.58,
+                organization="Meta",
+                license="open-source",
+            ),
+        ],
+        metadata=LeaderboardMetadata(
+            total_models=3,
+            total_votes=2771,
+            last_updated=datetime.now(UTC),
         ),
-        ModelStats(
-            id=2,
-            model_id="claude-3-5-sonnet",
-            elo_score=1632,
-            elo_ci=15.7,
-            vote_count=987,
-            win_count=650,
-            loss_count=280,
-            tie_count=57,
-            win_rate=0.64,
-            organization="Anthropic",
-            license="proprietary",
-            updated_at=datetime.now(UTC),
-        ),
-        ModelStats(
-            id=3,
-            model_id="llama-3-1-70b",
-            elo_score=1580,
-            elo_ci=18.9,
-            vote_count=550,
-            win_count=320,
-            loss_count=200,
-            tie_count=30,
-            win_rate=0.58,
-            organization="Meta",
-            license="open-source",
-            updated_at=datetime.now(UTC),
-        ),
-    ]
+    )
 
     with patch(
-        "llmbattler_backend.services.leaderboard_service.ModelStatsRepository"
-    ) as mock_repo_class:
-        # Mock repository
-        mock_repo = AsyncMock()
-        mock_repo.get_leaderboard.return_value = mock_models
-        mock_repo.get_total_votes.return_value = 1234 + 987 + 550  # 2771
-        mock_repo_class.return_value = mock_repo
+        "llmbattler_backend.services.leaderboard_service.LeaderboardService.get_leaderboard"
+    ) as mock_get_leaderboard:
+        # Mock service method
+        mock_get_leaderboard.return_value = mock_leaderboard
 
         # Act
         response = client.get("/api/leaderboard")
@@ -130,14 +125,20 @@ def test_get_leaderboard_empty_database(client: TestClient):
     2. User requests leaderboard
     3. Returns empty leaderboard with zero metadata
     """
-    # Arrange - Mock empty repository
+    # Arrange - Mock empty leaderboard response
+    mock_leaderboard = LeaderboardResponse(
+        leaderboard=[],
+        metadata=LeaderboardMetadata(
+            total_models=0,
+            total_votes=0,
+            last_updated=datetime.now(UTC),
+        ),
+    )
+
     with patch(
-        "llmbattler_backend.services.leaderboard_service.ModelStatsRepository"
-    ) as mock_repo_class:
-        mock_repo = AsyncMock()
-        mock_repo.get_leaderboard.return_value = []
-        mock_repo.get_total_votes.return_value = 0
-        mock_repo_class.return_value = mock_repo
+        "llmbattler_backend.services.leaderboard_service.LeaderboardService.get_leaderboard"
+    ) as mock_get_leaderboard:
+        mock_get_leaderboard.return_value = mock_leaderboard
 
         # Act
         response = client.get("/api/leaderboard")
@@ -169,14 +170,20 @@ def test_get_leaderboard_all_below_threshold(client: TestClient):
     2. Repository filters them out
     3. Returns empty leaderboard (all models filtered)
     """
-    # Arrange - Mock repository filtering out all models
+    # Arrange - Mock empty leaderboard response (all filtered)
+    mock_leaderboard = LeaderboardResponse(
+        leaderboard=[],
+        metadata=LeaderboardMetadata(
+            total_models=0,
+            total_votes=0,
+            last_updated=datetime.now(UTC),
+        ),
+    )
+
     with patch(
-        "llmbattler_backend.services.leaderboard_service.ModelStatsRepository"
-    ) as mock_repo_class:
-        mock_repo = AsyncMock()
-        mock_repo.get_leaderboard.return_value = []  # All filtered out
-        mock_repo.get_total_votes.return_value = 0
-        mock_repo_class.return_value = mock_repo
+        "llmbattler_backend.services.leaderboard_service.LeaderboardService.get_leaderboard"
+    ) as mock_get_leaderboard:
+        mock_get_leaderboard.return_value = mock_leaderboard
 
         # Act
         response = client.get("/api/leaderboard")
@@ -203,59 +210,54 @@ def test_get_leaderboard_sorting_by_elo(client: TestClient):
     2. Repository returns them sorted by elo_score desc
     3. Ranks assigned correctly (1, 2, 3, ...)
     """
-    # Arrange - Mock repository with sorted models
-    mock_models = [
-        ModelStats(
-            id=1,
-            model_id="gpt-4o",
-            elo_score=1654,
-            elo_ci=12.3,
-            vote_count=1234,
-            win_count=850,
-            loss_count=300,
-            tie_count=84,
-            win_rate=0.68,
-            organization="OpenAI",
-            license="proprietary",
-            updated_at=datetime.now(UTC),
+    # Arrange - Mock leaderboard response with sorted models
+    mock_leaderboard = LeaderboardResponse(
+        leaderboard=[
+            ModelStatsResponse(
+                rank=1,
+                model_id="gpt-4o",
+                model_name="gpt-4o",
+                elo_score=1654,
+                elo_ci=12.3,
+                vote_count=1234,
+                win_rate=0.68,
+                organization="OpenAI",
+                license="proprietary",
+            ),
+            ModelStatsResponse(
+                rank=2,
+                model_id="claude-3-5-sonnet",
+                model_name="claude-3-5-sonnet",
+                elo_score=1632,
+                elo_ci=15.7,
+                vote_count=987,
+                win_rate=0.64,
+                organization="Anthropic",
+                license="proprietary",
+            ),
+            ModelStatsResponse(
+                rank=3,
+                model_id="llama-3-1-70b",
+                model_name="llama-3-1-70b",
+                elo_score=1580,
+                elo_ci=18.9,
+                vote_count=550,
+                win_rate=0.58,
+                organization="Meta",
+                license="open-source",
+            ),
+        ],
+        metadata=LeaderboardMetadata(
+            total_models=3,
+            total_votes=2771,
+            last_updated=datetime.now(UTC),
         ),
-        ModelStats(
-            id=2,
-            model_id="claude-3-5-sonnet",
-            elo_score=1632,
-            elo_ci=15.7,
-            vote_count=987,
-            win_count=650,
-            loss_count=280,
-            tie_count=57,
-            win_rate=0.64,
-            organization="Anthropic",
-            license="proprietary",
-            updated_at=datetime.now(UTC),
-        ),
-        ModelStats(
-            id=3,
-            model_id="llama-3-1-70b",
-            elo_score=1580,
-            elo_ci=18.9,
-            vote_count=550,
-            win_count=320,
-            loss_count=200,
-            tie_count=30,
-            win_rate=0.58,
-            organization="Meta",
-            license="open-source",
-            updated_at=datetime.now(UTC),
-        ),
-    ]
+    )
 
     with patch(
-        "llmbattler_backend.services.leaderboard_service.ModelStatsRepository"
-    ) as mock_repo_class:
-        mock_repo = AsyncMock()
-        mock_repo.get_leaderboard.return_value = mock_models
-        mock_repo.get_total_votes.return_value = 2771
-        mock_repo_class.return_value = mock_repo
+        "llmbattler_backend.services.leaderboard_service.LeaderboardService.get_leaderboard"
+    ) as mock_get_leaderboard:
+        mock_get_leaderboard.return_value = mock_leaderboard
 
         # Act
         response = client.get("/api/leaderboard")
@@ -285,59 +287,54 @@ def test_get_leaderboard_metadata_accuracy(client: TestClient):
     1. Database has models with vote_count >= 5
     2. Metadata reflects correct totals
     """
-    # Arrange - Mock repository
-    mock_models = [
-        ModelStats(
-            id=1,
-            model_id="gpt-4o",
-            elo_score=1654,
-            elo_ci=12.3,
-            vote_count=1234,
-            win_count=850,
-            loss_count=300,
-            tie_count=84,
-            win_rate=0.68,
-            organization="OpenAI",
-            license="proprietary",
-            updated_at=datetime.now(UTC),
+    # Arrange - Mock leaderboard response
+    mock_leaderboard = LeaderboardResponse(
+        leaderboard=[
+            ModelStatsResponse(
+                rank=1,
+                model_id="gpt-4o",
+                model_name="gpt-4o",
+                elo_score=1654,
+                elo_ci=12.3,
+                vote_count=1234,
+                win_rate=0.68,
+                organization="OpenAI",
+                license="proprietary",
+            ),
+            ModelStatsResponse(
+                rank=2,
+                model_id="claude-3-5-sonnet",
+                model_name="claude-3-5-sonnet",
+                elo_score=1632,
+                elo_ci=15.7,
+                vote_count=987,
+                win_rate=0.64,
+                organization="Anthropic",
+                license="proprietary",
+            ),
+            ModelStatsResponse(
+                rank=3,
+                model_id="llama-3-1-70b",
+                model_name="llama-3-1-70b",
+                elo_score=1580,
+                elo_ci=18.9,
+                vote_count=550,
+                win_rate=0.58,
+                organization="Meta",
+                license="open-source",
+            ),
+        ],
+        metadata=LeaderboardMetadata(
+            total_models=3,
+            total_votes=2771,
+            last_updated=datetime.now(UTC),
         ),
-        ModelStats(
-            id=2,
-            model_id="claude-3-5-sonnet",
-            elo_score=1632,
-            elo_ci=15.7,
-            vote_count=987,
-            win_count=650,
-            loss_count=280,
-            tie_count=57,
-            win_rate=0.64,
-            organization="Anthropic",
-            license="proprietary",
-            updated_at=datetime.now(UTC),
-        ),
-        ModelStats(
-            id=3,
-            model_id="llama-3-1-70b",
-            elo_score=1580,
-            elo_ci=18.9,
-            vote_count=550,
-            win_count=320,
-            loss_count=200,
-            tie_count=30,
-            win_rate=0.58,
-            organization="Meta",
-            license="open-source",
-            updated_at=datetime.now(UTC),
-        ),
-    ]
+    )
 
     with patch(
-        "llmbattler_backend.services.leaderboard_service.ModelStatsRepository"
-    ) as mock_repo_class:
-        mock_repo = AsyncMock()
-        mock_repo.get_leaderboard.return_value = mock_models
-        mock_repo.get_total_votes.return_value = 1234 + 987 + 550  # 2771
-        mock_repo_class.return_value = mock_repo
+        "llmbattler_backend.services.leaderboard_service.LeaderboardService.get_leaderboard"
+    ) as mock_get_leaderboard:
+        mock_get_leaderboard.return_value = mock_leaderboard
 
         # Act
         response = client.get("/api/leaderboard")

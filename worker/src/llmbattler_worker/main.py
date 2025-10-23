@@ -197,13 +197,29 @@ async def main():
     scheduler = AsyncIOScheduler(timezone=settings.worker_timezone)
 
     # Schedule hourly aggregation
-    scheduler.add_job(
-        run_aggregation,
-        trigger=CronTrigger(
-            hour=f"*/{settings.worker_interval_hours}",
+    # Note: For interval=1, use CronTrigger for precise :00 execution
+    # For other intervals, CronTrigger with hour="*" still works (runs every hour)
+    if settings.worker_interval_hours == 1:
+        # Run every hour at :00
+        trigger = CronTrigger(
+            hour="*",
             minute="0",
             timezone=settings.worker_timezone,
-        ),
+        )
+    else:
+        # For intervals > 1 hour, use IntervalTrigger
+        # This runs every N hours from the start time
+        from apscheduler.triggers.interval import IntervalTrigger
+
+        trigger = IntervalTrigger(
+            hours=settings.worker_interval_hours,
+            timezone=settings.worker_timezone,
+        )
+        logger.info(f"Using IntervalTrigger: every {settings.worker_interval_hours} hours")
+
+    scheduler.add_job(
+        run_aggregation,
+        trigger=trigger,
         id="elo_aggregation",
         name="ELO Rating Aggregation",
         replace_existing=True,

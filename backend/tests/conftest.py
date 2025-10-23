@@ -7,15 +7,14 @@ import os
 
 # IMPORTANT: Set test database URL BEFORE importing app
 # This ensures the app connects to the test database
-os.environ["POSTGRES_URI"] = (
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler_test"
-)
+os.environ["POSTGRES_URI"] = "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler_test"
 
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 from sqlmodel import SQLModel
 
 from llmbattler_backend.main import app
@@ -24,10 +23,12 @@ from llmbattler_backend.services.llm_client import MockLLMClient, reset_llm_clie
 # Test database URL (use in-memory SQLite or test PostgreSQL)
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler_test"
 
-# Create test engine
+# Create test engine with NullPool to avoid connection reuse issues
+
 test_engine = create_async_engine(
     TEST_DATABASE_URL,
     echo=False,
+    poolclass=NullPool,  # Don't pool connections in tests
 )
 
 # Create test session factory
@@ -77,8 +78,17 @@ def use_mock_llm():
     reset_llm_client()  # Clean up after test
 
 
-@pytest.fixture
-def client():
-    """Test client for FastAPI app"""
+@pytest_asyncio.fixture(scope="function")
+async def client():
+    """Test client for FastAPI app with database setup"""
+    # Create all tables before test
+    async with test_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+
+    # Create test client
     with TestClient(app) as test_client:
         yield test_client
+
+    # Drop all tables after test
+    async with test_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
