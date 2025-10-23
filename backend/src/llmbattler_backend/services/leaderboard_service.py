@@ -5,9 +5,10 @@ Leaderboard business logic service
 from datetime import UTC, datetime
 from typing import List
 
-from llmbattler_shared.models import ModelStats
+from llmbattler_shared.models import ModelStats, WorkerStatus
 from llmbattler_shared.schemas import LeaderboardMetadata, LeaderboardResponse, ModelStatsResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from ..repositories.model_stats_repository import ModelStatsRepository
 
@@ -27,22 +28,32 @@ class LeaderboardService:
             min_vote_count: Minimum number of votes required to appear on leaderboard
 
         Returns:
-            LeaderboardResponse with ranked models and metadata
+            LeaderboardResponse with ranked models sorted by ELO score descending
         """
-        # Get models from repository (already sorted by elo_score desc)
+        # Get models from repository (sorted by elo_score desc)
         models = await self.model_stats_repo.get_leaderboard(min_vote_count)
 
         # Get total votes
         total_votes = await self.model_stats_repo.get_total_votes(min_vote_count)
 
-        # Build leaderboard entries with ranks
+        # Get last update time from worker_status table
+        # This shows when worker last ran, even if no votes were processed
+        result = await self.db.execute(
+            select(WorkerStatus).where(WorkerStatus.worker_name == "elo_aggregator")
+        )
+        worker_status = result.scalar_one_or_none()
+        last_updated = (
+            worker_status.last_run_at if worker_status else datetime.now(UTC)
+        )
+
+        # Build leaderboard entries with ranks (1 = highest ELO)
         leaderboard_entries = self._build_leaderboard_entries(models)
 
         # Build metadata
         metadata = LeaderboardMetadata(
             total_models=len(models),
             total_votes=total_votes,
-            last_updated=datetime.now(UTC),
+            last_updated=last_updated,
         )
 
         return LeaderboardResponse(
@@ -61,7 +72,7 @@ class LeaderboardService:
             models: List of ModelStats sorted by elo_score descending
 
         Returns:
-            List of ModelStatsResponse with ranks assigned
+            List of ModelStatsResponse with ranks assigned (1 = highest ELO)
         """
         entries = []
         for rank, model in enumerate(models, start=1):

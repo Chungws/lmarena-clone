@@ -7,7 +7,10 @@ and update ELO ratings.
 
 import asyncio
 from datetime import UTC, datetime
+from pathlib import Path
+from typing import Dict
 
+import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from llmbattler_shared.config import settings
@@ -22,6 +25,45 @@ from .database import async_session_maker
 # Configure package-level logging
 # Child modules (e.g., llmbattler_worker.*) will inherit this configuration
 logger = setup_logging("llmbattler_worker")
+
+
+def load_model_configs() -> Dict[str, Dict[str, str]]:
+    """
+    Load model configurations from YAML file
+
+    Returns:
+        Dict mapping model_id -> {organization, license}
+    """
+    config_path = Path(settings.models_config_path)
+
+    if not config_path.exists():
+        logger.warning(f"Model config not found: {config_path}, using defaults")
+        return {}
+
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+
+        if not config or "models" not in config:
+            logger.warning("Invalid model config: missing 'models' key")
+            return {}
+
+        # Extract organization and license for each model
+        model_configs = {}
+        for model_dict in config["models"]:
+            model_id = model_dict.get("id")
+            if model_id:
+                model_configs[model_id] = {
+                    "organization": model_dict.get("organization", "Unknown"),
+                    "license": model_dict.get("license", "Unknown"),
+                }
+
+        logger.info(f"Loaded configs for {len(model_configs)} models")
+        return model_configs
+
+    except Exception as e:
+        logger.error(f"Failed to load model config: {e}")
+        return {}
 
 
 async def run_aggregation(session: AsyncSession | None = None):
@@ -67,8 +109,11 @@ async def _run_aggregation_with_session(session: AsyncSession):
     error_message = None
 
     try:
+        # Load model configs for organization and license info
+        model_configs = load_model_configs()
+
         # Run ELO aggregation
-        aggregator = ELOAggregator(session)
+        aggregator = ELOAggregator(session, model_configs=model_configs)
         votes_processed = await aggregator.process_pending_votes()
 
         # Update worker_status

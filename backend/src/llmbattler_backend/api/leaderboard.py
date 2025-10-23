@@ -26,15 +26,17 @@ async def get_leaderboard(
     Flow:
     1. Query model_stats table from PostgreSQL
     2. Filter models with vote_count >= 5 (minimum threshold)
-    3. Sort by elo_score descending
+    3. Sort by elo_score descending (fixed rank: 1 = highest ELO)
     4. Assign ranks (1, 2, 3, ...)
     5. Calculate metadata (total models, total votes, last updated)
+
+    Note: Sorting/filtering is handled client-side for better performance
 
     Args:
         db: Database session
 
     Returns:
-        LeaderboardResponse with ranked models and metadata
+        LeaderboardResponse with ranked models and metadata (sorted by ELO score)
 
     Raises:
         HTTPException 500: If database query fails

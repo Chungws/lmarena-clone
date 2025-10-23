@@ -4,7 +4,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { getLeaderboard } from "./service";
 import type {
   LeaderboardEntry,
@@ -41,7 +41,7 @@ export function useLeaderboard(): UseLeaderboardReturn {
     setError(null);
 
     try {
-      const data = await getLeaderboard(sortBy, sortOrder);
+      const data = await getLeaderboard();
       setEntries(data.leaderboard);
       setMetadata(data.metadata);
     } catch (err) {
@@ -61,24 +61,56 @@ export function useLeaderboard(): UseLeaderboardReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [sortBy, sortOrder]);
+  }, []);
 
   useEffect(() => {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
 
-  // Filter entries based on search query (client-side)
-  const filteredEntries = searchQuery
-    ? entries.filter(
-        (entry) =>
-          entry.model_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          entry.model_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          entry.organization.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : entries;
+  // Filter and sort entries (client-side)
+  const processedEntries = React.useMemo(() => {
+    // First, filter based on search query
+    let filtered = searchQuery
+      ? entries.filter(
+          (entry) =>
+            entry.model_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            entry.model_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            entry.organization.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : entries;
+
+    // Then, sort based on sortBy and sortOrder
+    const sorted = [...filtered].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+
+      // Get values for comparison
+      if (sortBy === "rank") {
+        aValue = a.rank;
+        bValue = b.rank;
+      } else {
+        aValue = a[sortBy];
+        bValue = b[sortBy];
+      }
+
+      // Compare based on type
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        // String comparison (case-insensitive)
+        const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+        return sortOrder === "asc" ? comparison : -comparison;
+      } else if (typeof aValue === "number" && typeof bValue === "number") {
+        // Number comparison
+        return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
+      }
+
+      return 0;
+    });
+
+    return sorted;
+  }, [entries, searchQuery, sortBy, sortOrder]);
 
   return {
-    entries: filteredEntries,
+    entries: processedEntries,
     metadata,
     isLoading,
     error,
