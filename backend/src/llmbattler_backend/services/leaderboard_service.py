@@ -42,9 +42,7 @@ class LeaderboardService:
             select(WorkerStatus).where(WorkerStatus.worker_name == "elo_aggregator")
         )
         worker_status = result.scalar_one_or_none()
-        last_updated = (
-            worker_status.last_run_at if worker_status else datetime.now(UTC)
-        )
+        last_updated = worker_status.last_run_at if worker_status else datetime.now(UTC)
 
         # Build leaderboard entries with ranks (1 = highest ELO)
         leaderboard_entries = self._build_leaderboard_entries(models)
