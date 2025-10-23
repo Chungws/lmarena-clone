@@ -207,11 +207,10 @@ lmarena-clone/
 
 ## 🚀 Production Deployment
 
-See **[📖 DEPLOYMENT.md](DEPLOYMENT.md)** for complete deployment guide with 3 scenarios:
+See **[📖 DEPLOYMENT.md](DEPLOYMENT.md)** for complete deployment guide with 2 scenarios:
 
 - **Scenario A:** IP-based with lightweight models (6 Ollama models, no domain needed) - **Recommended**
 - **Scenario B:** Domain-based with SSL (Nginx + Let's Encrypt)
-- **Scenario C:** Mixed deployment (External APIs + Ollama)
 
 ### Quick Production Deploy (30 seconds)
 
@@ -226,9 +225,7 @@ cp .env.prod.example .env.prod
 nano .env.prod  # Edit: DOMAIN, NEXT_PUBLIC_API_URL, CORS_ORIGINS, POSTGRES_PASSWORD
 
 # Choose model configuration
-cp backend/config/models.prod-lightweight.yaml backend/config/models.yaml  # 6 lightweight models (Recommended)
-# OR
-cp backend/config/models.prod.yaml backend/config/models.yaml  # Mixed (External APIs + Ollama)
+cp backend/config/models.prod.yaml backend/config/models.yaml  # 6 lightweight Ollama models
 
 # Deploy (20-40 min including model downloads)
 docker compose build

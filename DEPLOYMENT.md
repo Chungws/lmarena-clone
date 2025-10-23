@@ -10,7 +10,6 @@ Complete guide for deploying **llmbattler** using Docker Compose.
 2. [Deployment Scenarios](#-deployment-scenarios)
    - [Scenario A: IP-based with Lightweight Models](#scenario-a-ip-based-with-lightweight-models-recommended) (Recommended)
    - [Scenario B: Domain-based with SSL](#scenario-b-domain-based-with-ssl)
-   - [Scenario C: Mixed (External APIs + Ollama)](#scenario-c-mixed-external-apis--ollama)
 3. [GPU Setup](#-gpu-setup-optional)
 4. [Troubleshooting](#-troubleshooting)
 5. [Maintenance](#-maintenance)
@@ -34,7 +33,7 @@ nano .env.prod
 # Edit: DOMAIN, NEXT_PUBLIC_API_URL, CORS_ORIGINS, POSTGRES_PASSWORD
 
 # 3. Configure models (lightweight)
-cp backend/config/models.prod-lightweight.yaml backend/config/models.yaml
+cp backend/config/models.prod.yaml backend/config/models.yaml
 
 # 4. Deploy
 docker compose build
@@ -62,8 +61,7 @@ Choose the scenario that matches your needs.
 | Scenario | Domain | SSL | Models | Complexity | Cost |
 |----------|--------|-----|--------|------------|------|
 | **A: IP + Lightweight** | ❌ | ❌ | 6 Ollama (1B-8B) | ⭐ Easy | Free |
-| **B: Domain + SSL** | ✅ | ✅ | Mixed | ⭐⭐ Medium | Free-$$ |
-| **C: External APIs** | ❌/✅ | ❌/✅ | OpenAI, Claude | ⭐⭐⭐ Hard | $$$ |
+| **B: Domain + SSL** | ✅ | ✅ | 6 Ollama (1B-8B) | ⭐⭐ Medium | Free |
 
 ---
 
@@ -134,7 +132,7 @@ OLLAMA_GPU_ENABLED=0
 **Step 2: Configure models**
 
 ```bash
-cp backend/config/models.prod-lightweight.yaml backend/config/models.yaml
+cp backend/config/models.prod.yaml backend/config/models.yaml
 ```
 
 ### A4. Deploy
@@ -231,21 +229,13 @@ CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com
 POSTGRES_PASSWORD=your_secure_password_here
 POSTGRES_URI=postgresql+asyncpg://postgres:your_secure_password_here@postgres:5432/llmbattler
 
-# API Keys (optional)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Models (can use mixed: external + Ollama)
-OLLAMA_MODELS=llama3.1:8b,mistral:7b
+# Ollama models (6 lightweight models)
+OLLAMA_MODELS=tinyllama:1.1b,gemma2:2b,phi3:mini,qwen2.5:3b,mistral:7b,llama3.1:8b
 ```
 
-**Choose models:**
+**Configure models:**
 
 ```bash
-# Option 1: Lightweight only
-cp backend/config/models.prod-lightweight.yaml backend/config/models.yaml
-
-# Option 2: Mixed (external APIs + Ollama)
 cp backend/config/models.prod.yaml backend/config/models.yaml
 ```
 
@@ -321,31 +311,6 @@ docker compose --env-file .env.prod up -d
 
 - **Frontend:** `https://yourdomain.com`
 - **API:** `https://api.yourdomain.com/docs`
-
----
-
-## Scenario C: Mixed (External APIs + Ollama)
-
-**Best for:** Production with budget, best model variety
-
-**Configuration:**
-
-```bash
-# .env.prod
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-OLLAMA_MODELS=llama3.1:8b,mistral:7b
-
-# models.yaml - include both external and Ollama
-cp backend/config/models.prod.yaml backend/config/models.yaml
-```
-
-**Cost estimate:**
-- OpenAI GPT-4: ~$0.03 per 1K tokens
-- Anthropic Claude: ~$0.015 per 1K tokens
-- Ollama: Free (hosting cost only)
-
-**Typical usage:** 1000 battles/day = ~$5-20/day depending on models.
 
 ---
 

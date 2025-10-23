@@ -1,37 +1,59 @@
-# Production Models Configuration
-# Copy this to models.yaml when deploying with docker-compose
+# Production Models Configuration - Lightweight (Self-hosted Only)
+# Ollama models only, no external API dependencies
+# Total RAM requirement: ~26GB (all models loaded)
+# Models range from 1B to 8B parameters
 
 models:
-  # External API Models
-  - id: gpt-4o-mini
-    name: GPT-4o Mini
-    model: gpt-4o-mini
-    base_url: https://api.openai.com/v1
-    api_key_env: OPENAI_API_KEY
-    organization: OpenAI
-    license: proprietary
+  # 1. TinyLlama 1.1B - Smallest, fastest
+  - id: tinyllama-1.1b
+    name: TinyLlama 1.1B
+    model: tinyllama:1.1b
+    base_url: http://ollama:11434/v1
+    api_key_env: null
+    organization: TinyLlama
+    license: open-source
 
-  - id: claude-3-5-sonnet
-    name: Claude 3.5 Sonnet
-    model: claude-3-5-sonnet-20241022
-    base_url: https://api.anthropic.com/v1
-    api_key_env: ANTHROPIC_API_KEY
-    organization: Anthropic
-    license: proprietary
+  # 2. Gemma 2 2B - Google's efficient model
+  - id: gemma-2-2b
+    name: Gemma 2 2B
+    model: gemma2:2b
+    base_url: http://ollama:11434/v1
+    api_key_env: null
+    organization: Google
+    license: open-source
 
-  # Self-hosted Models (Ollama)
+  # 3. Phi-3 Mini 3B - Microsoft's lightweight powerhouse
+  - id: phi3-mini
+    name: Phi-3 Mini 3B
+    model: phi3:mini
+    base_url: http://ollama:11434/v1
+    api_key_env: null
+    organization: Microsoft
+    license: open-source
+
+  # 4. Qwen 2.5 3B - Alibaba's multilingual model
+  - id: qwen-2-5-3b
+    name: Qwen 2.5 3B
+    model: qwen2.5:3b
+    base_url: http://ollama:11434/v1
+    api_key_env: null
+    organization: Alibaba
+    license: open-source
+
+  # 5. Mistral 7B - Popular and well-tested
+  - id: mistral-7b
+    name: Mistral 7B
+    model: mistral:7b
+    base_url: http://ollama:11434/v1
+    api_key_env: null
+    organization: Mistral AI
+    license: open-source
+
+  # 6. Llama 3.1 8B - Meta's latest
   - id: llama-3-1-8b
     name: Llama 3.1 8B
     model: llama3.1:8b
     base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Meta
-    license: open-source
-
-  - id: qwen-2-5-7b
-    name: Qwen 2.5 7B
-    model: qwen2.5:7b
-    base_url: http://ollama:11434/v1
-    api_key_env: null
-    organization: Alibaba
     license: open-source
