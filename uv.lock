@@ -468,6 +468,25 @@ name = "llmbattler"
 version = "0.1.0"
 source = { virtual = "." }
 
+[package.optional-dependencies]
+dev = [
+    { name = "isort" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "isort", marker = "extra == 'dev'", specifier = ">=5.13.2" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.5" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.25.2" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9.2" },
+]
+provides-extras = ["dev"]
+
 [[package]]
 name = "llmbattler-backend"
 version = "0.1.0"

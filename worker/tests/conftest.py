@@ -2,6 +2,14 @@
 Pytest configuration and fixtures for worker tests
 """
 
+import os
+
+# IMPORTANT: Set test database URL BEFORE importing any modules
+# This ensures the worker connects to the test database
+os.environ["POSTGRES_URI"] = (
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler_test"
+)
+
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker

@@ -60,10 +60,13 @@ Inspired by [LM Arena](https://lmarena.ai), built with modern web technologies.
 git clone https://github.com/Chungws/lmarena-clone.git
 cd lmarena-clone
 
-# Optional: Customize environment variables
-cp .env.example .env
+# Configure models (choose dev or prod template)
+cp backend/config/models.dev.yaml backend/config/models.yaml
 
-# Start all services (PostgreSQL, Backend, Worker, Frontend)
+# Optional: Customize environment variables
+cp .env.dev.example .env
+
+# Start all services (PostgreSQL, Backend, Worker, Frontend, Ollama)
 docker compose up -d
 
 # View logs
@@ -86,6 +89,9 @@ docker compose down
 # Clone repository
 git clone https://github.com/Chungws/lmarena-clone.git
 cd lmarena-clone
+
+# Configure models for local development
+cp backend/config/models.dev.yaml backend/config/models.yaml
 
 # Start PostgreSQL only
 docker compose -f docker-compose.dev.yml up -d
@@ -199,10 +205,50 @@ lmarena-clone/
 
 ---
 
+## 🚀 Production Deployment
+
+See **[📖 DEPLOYMENT.md](DEPLOYMENT.md)** for complete deployment guide with 3 scenarios:
+
+- **Scenario A:** IP-based with lightweight models (6 Ollama models, no domain needed) - **Recommended**
+- **Scenario B:** Domain-based with SSL (Nginx + Let's Encrypt)
+- **Scenario C:** Mixed deployment (External APIs + Ollama)
+
+### Quick Production Deploy (30 seconds)
+
+```bash
+# On server
+ssh user@YOUR_SERVER_IP
+git clone https://github.com/Chungws/lmarena-clone.git
+cd lmarena-clone
+
+# Configure
+cp .env.prod.example .env.prod
+nano .env.prod  # Edit: DOMAIN, NEXT_PUBLIC_API_URL, CORS_ORIGINS, POSTGRES_PASSWORD
+
+# Choose model configuration
+cp backend/config/models.prod-lightweight.yaml backend/config/models.yaml  # 6 lightweight models (Recommended)
+# OR
+cp backend/config/models.prod.yaml backend/config/models.yaml  # Mixed (External APIs + Ollama)
+
+# Deploy (20-40 min including model downloads)
+docker compose build
+docker compose --env-file .env.prod up -d
+sudo ufw allow 3000/tcp 8000/tcp
+
+# Access
+# Frontend: http://YOUR_SERVER_IP:3000
+# API: http://YOUR_SERVER_IP:8000/docs
+```
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for detailed instructions, GPU setup, troubleshooting, and production hardening.
+
+---
+
 ## 📚 Documentation
 
 | Document | Description |
 |----------|-------------|
+| [DEPLOYMENT.md](DEPLOYMENT.md) | **Production deployment guide with Docker Compose** |
 | [WORKSPACE/00_PROJECT.md](WORKSPACE/00_PROJECT.md) | Comprehensive project overview, policies, setup guide |
 | [WORKSPACE/00_ROADMAP.md](WORKSPACE/00_ROADMAP.md) | Development roadmap and milestones |
 | [WORKSPACE/CONVENTIONS/](WORKSPACE/CONVENTIONS/) | Coding standards, Git workflow, PR guidelines |

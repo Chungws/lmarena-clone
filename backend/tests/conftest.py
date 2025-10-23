@@ -3,6 +3,13 @@ Pytest configuration and fixtures for backend tests
 """
 
 import asyncio
+import os
+
+# IMPORTANT: Set test database URL BEFORE importing app
+# This ensures the app connects to the test database
+os.environ["POSTGRES_URI"] = (
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler_test"
+)
 
 import pytest
 import pytest_asyncio

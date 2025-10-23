@@ -1,0 +1,37 @@
+# Production Models Configuration
+# Copy this to models.yaml when deploying with docker-compose
+
+models:
+  # External API Models
+  - id: gpt-4o-mini
+    name: GPT-4o Mini
+    model: gpt-4o-mini
+    base_url: https://api.openai.com/v1
+    api_key_env: OPENAI_API_KEY
+    organization: OpenAI
+    license: proprietary
+
+  - id: claude-3-5-sonnet
+    name: Claude 3.5 Sonnet
+    model: claude-3-5-sonnet-20241022
+    base_url: https://api.anthropic.com/v1
+    api_key_env: ANTHROPIC_API_KEY
+    organization: Anthropic
+    license: proprietary
+
+  # Self-hosted Models (Ollama)
+  - id: llama-3-1-8b
+    name: Llama 3.1 8B
+    model: llama3.1:8b
+    base_url: http://ollama:11434/v1
+    api_key_env: null
+    organization: Meta
+    license: open-source
+
+  - id: qwen-2-5-7b
+    name: Qwen 2.5 7B
+    model: qwen2.5:7b
+    base_url: http://ollama:11434/v1
+    api_key_env: null
+    organization: Alibaba
+    license: open-source
