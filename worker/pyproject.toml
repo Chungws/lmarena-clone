@@ -37,6 +37,12 @@ target-version = "py311"
 select = ["E", "F", "I", "N", "W"]
 ignore = ["E501"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["llmbattler_worker", "llmbattler_shared"]
+force-single-line = false
+lines-after-imports = 2
+split-on-trailing-comma = true
+
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 
