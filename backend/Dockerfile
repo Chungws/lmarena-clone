@@ -23,10 +23,13 @@ COPY shared/ ./shared/
 # Copy backend package
 COPY backend/ ./backend/
 
+# Copy config files
+COPY config/ ./config/
+
 # Sync workspace dependencies (includes shared package)
 RUN --mount=type=cache,target=/root/.cache/uv \
     UV_COMPILE_BYTECODE=1 \
-    uv sync --frozen
+    uv sync --frozen --package llmbattler-backend
 
 # Copy entrypoint script
 COPY backend/entrypoint.sh /app/entrypoint.sh

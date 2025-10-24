@@ -78,8 +78,8 @@ class Settings(BaseSettings):
     k_factor: int = 32
 
     # PostgreSQL connection pool settings (Backend API)
-    postgres_pool_size: int = 5
-    postgres_max_overflow: int = 5  # Total max: 5 + 5 = 10 connections
+    postgres_pool_size: int = 10
+    postgres_max_overflow: int = 20  # Total max: 10 + 20 = 30 connections
 
     # PostgreSQL connection pool settings (Worker)
     worker_pool_size: int = 2

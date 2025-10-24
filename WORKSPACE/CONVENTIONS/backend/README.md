@@ -34,12 +34,12 @@ cd backend
 # 환경 설정
 uv sync
 uv run alembic upgrade head
-uv run uvicorn app.main:app --reload --port 8000
+uv run uvicorn llmbattler_backend.main:app --reload --port 8000
 
 # TDD 워크플로우 (새 기능 추가)
 vim tests/test_feature.py              # 1. 테스트 작성
 uv run pytest -s                       # 2. 실패 확인 (Red)
-vim app/feature/service.py             # 3. 구현 (Green)
+vim src/llmbattler_backend/services/feature_service.py  # 3. 구현 (Green)
 uv run pytest -s                       # 4. 통과 확인
 uv run alembic revision --autogenerate # 5. 마이그레이션 (모델 변경 시)
 
