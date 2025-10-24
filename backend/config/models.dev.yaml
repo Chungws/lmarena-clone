@@ -1,32 +1,93 @@
 models:
-  - id: gpt-4o-mini
-    name: GPT-4o Mini
-    model: gpt-4o-mini
-    base_url: https://api.openai.com/v1
-    api_key_env: OPENAI_API_KEY
-    organization: OpenAI
-    license: proprietary
+  # Test configuration: 10 variants of gemma3:1b for local battle testing
+  # All route to the same model but generate different responses due to sampling
 
-  - id: llama-3-1-8b
-    name: Llama 3.1 8B
-    model: llama3.1:8b
+  - id: gemma3-fast
+    name: Gemma 3 Fast
+    model: gemma3:1b
     base_url: http://localhost:11434/v1
     api_key_env: null
-    organization: Meta
+    organization: Google
     license: open-source
+    status: active
 
-  - id: qwen-2-5-7b
-    name: Qwen 2.5 7B
-    model: qwen2.5:7b
+  - id: gemma3-creative
+    name: Gemma 3 Creative
+    model: gemma3:1b
     base_url: http://localhost:11434/v1
     api_key_env: null
-    organization: Alibaba
+    organization: Google
     license: open-source
+    status: active
 
-  - id: claude-3-5-sonnet
-    name: Claude 3.5 Sonnet
-    model: claude-3-5-sonnet-20241022
-    base_url: https://api.anthropic.com/v1
-    api_key_env: ANTHROPIC_API_KEY
-    organization: Anthropic
-    license: proprietary
+  - id: gemma3-analytical
+    name: Gemma 3 Analytical
+    model: gemma3:1b
+    base_url: http://localhost:11434/v1
+    api_key_env: null
+    organization: Google
+    license: open-source
+    status: active
+
+  - id: gemma3-concise
+    name: Gemma 3 Concise
+    model: gemma3:1b
+    base_url: http://localhost:11434/v1
+    api_key_env: null
+    organization: Google
+    license: open-source
+    status: active
+
+  - id: gemma3-detailed
+    name: Gemma 3 Detailed
+    model: gemma3:1b
+    base_url: http://localhost:11434/v1
+    api_key_env: null
+    organization: Google
+    license: open-source
+    status: active
+
+  - id: gemma3-balanced
+    name: Gemma 3 Balanced
+    model: gemma3:1b
+    base_url: http://localhost:11434/v1
+    api_key_env: null
+    organization: Google
+    license: open-source
+    status: active
+
+  - id: gemma3-technical
+    name: Gemma 3 Technical
+    model: gemma3:1b
+    base_url: http://localhost:11434/v1
+    api_key_env: null
+    organization: Google
+    license: open-source
+    status: active
+
+  - id: gemma3-casual
+    name: Gemma 3 Casual
+    model: gemma3:1b
+    base_url: http://localhost:11434/v1
+    api_key_env: null
+    organization: Google
+    license: open-source
+    status: active
+
+  - id: gemma3-formal
+    name: Gemma 3 Formal
+    model: gemma3:1b
+    base_url: http://localhost:11434/v1
+    api_key_env: null
+    organization: Google
+    license: open-source
+    status: active
+
+  - id: gemma3-friendly
+    name: Gemma 3 Friendly
+    model: gemma3:1b
+    base_url: http://localhost:11434/v1
+    api_key_env: null
+    organization: Google
+    license: open-source
+    status: active
