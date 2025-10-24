@@ -42,8 +42,8 @@ class Settings(BaseSettings):
             origin.strip() for origin in self.cors_origins.split(",") if origin.strip()
         ]
 
-    # Model configuration (relative to project root)
-    models_config_path: str = "backend/config/models.yaml"
+    # Model configuration (relative to backend directory when running backend)
+    models_config_path: str = "config/models.yaml"
 
     # Worker settings
     worker_interval_hours: int = 1  # Run worker every N hours
