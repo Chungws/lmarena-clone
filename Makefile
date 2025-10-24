@@ -1,17 +1,27 @@
-.PHONY: help setup dev dev-infra dev-backend dev-frontend dev-worker stop clean test lint
+.PHONY: help setup dev dev-infra dev-backend dev-frontend dev-worker stop clean test lint prod-setup prod prod-build prod-logs prod-stop prod-clean
 
 help:
 	@echo "llmbattler Development Commands"
 	@echo ""
+	@echo "Development:"
 	@echo "  make setup        - Initial setup (install dependencies)"
 	@echo "  make dev          - Start infrastructure and show service commands"
 	@echo "  make dev-infra    - Start PostgreSQL + Ollama"
 	@echo "  make dev-backend  - Start Backend API (port 8000)"
 	@echo "  make dev-frontend - Start Frontend (port 3000)"
 	@echo "  make dev-worker   - Start Worker (manual run)"
-	@echo ""
 	@echo "  make stop         - Stop Docker services"
 	@echo "  make clean        - Stop and remove all data (WARNING: deletes DB)"
+	@echo ""
+	@echo "Production:"
+	@echo "  make prod-setup   - Create .env.prod file (first time only)"
+	@echo "  make prod         - Start all services in production mode"
+	@echo "  make prod-build   - Rebuild and start production services"
+	@echo "  make prod-logs    - View production logs (Ctrl+C to exit)"
+	@echo "  make prod-stop    - Stop production services"
+	@echo "  make prod-clean   - Stop and remove all production data"
+	@echo ""
+	@echo "Testing:"
 	@echo "  make test         - Run all tests"
 	@echo "  make lint         - Run all linters"
 
@@ -109,3 +119,80 @@ lint:
 	@cd frontend && npm run lint
 	@echo ""
 	@echo "✅ All linters passed"
+
+# ==========================================
+# Production Commands
+# ==========================================
+
+# Create production environment file
+prod-setup:
+	@if [ -f .env.prod ]; then \
+		echo "⚠️  .env.prod already exists"; \
+		echo "Edit it manually or delete it first"; \
+	else \
+		echo "📝 Creating .env.prod..."; \
+		cp .env.example .env.prod; \
+		echo ""; \
+		echo "✅ .env.prod created!"; \
+		echo ""; \
+		echo "📝 Important: Edit .env.prod and set:"; \
+		echo "  - POSTGRES_URI=postgresql+asyncpg://postgres:postgres@postgres:5432/llmbattler"; \
+		echo "  - NEXT_PUBLIC_API_URL (your backend URL)"; \
+		echo "  - CORS_ORIGINS (your frontend URL)"; \
+	fi
+
+# Start production services
+prod:
+	@echo "🚀 Starting production services..."
+	@if [ ! -f .env.prod ]; then \
+		echo "❌ .env.prod not found!"; \
+		echo "Run: make prod-setup"; \
+		exit 1; \
+	fi
+	docker compose --env-file .env.prod --profile prod up -d
+	@echo ""
+	@echo "✅ Production services starting..."
+	@echo ""
+	@echo "🔗 Services:"
+	@echo "  Frontend:  http://localhost:3000"
+	@echo "  Backend:   http://localhost:8000"
+	@echo "  Ollama:    http://localhost:11434"
+	@echo "  Postgres:  localhost:5432"
+	@echo ""
+	@echo "📊 Check status: docker compose ps"
+	@echo "📋 View logs:    make prod-logs"
+
+# Rebuild and start production services
+prod-build:
+	@echo "🔨 Building and starting production services..."
+	@if [ ! -f .env.prod ]; then \
+		echo "❌ .env.prod not found!"; \
+		echo "Run: make prod-setup"; \
+		exit 1; \
+	fi
+	docker compose --env-file .env.prod --profile prod up -d --build
+	@echo ""
+	@echo "✅ Production services rebuilt and started"
+
+# View production logs
+prod-logs:
+	@echo "📋 Viewing production logs (Ctrl+C to exit)..."
+	docker compose --env-file .env.prod logs -f
+
+# Stop production services
+prod-stop:
+	@echo "🛑 Stopping production services..."
+	docker compose --env-file .env.prod --profile prod down
+	@echo "✅ Production services stopped"
+
+# Clean production data (WARNING)
+prod-clean:
+	@echo "⚠️  WARNING: This will delete all production data!"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		docker compose --env-file .env.prod --profile prod down -v; \
+		echo "✅ All production data deleted"; \
+	else \
+		echo "❌ Cancelled"; \
+	fi

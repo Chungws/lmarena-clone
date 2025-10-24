@@ -8,8 +8,9 @@
 # - name: Display name for frontend
 # - model: Model name to send in API request (e.g., "gemma3:1b")
 # - base_url: Base URL for LLM API endpoint
-#   - Development: http://localhost:11434/v1
-#   - Production: http://ollama:11434/v1 (Docker service name)
+#   - Development (host): http://localhost:11434/v1
+#   - Production (Docker): http://ollama:11434/v1 (Docker service name)
+#   - Note: Using 'ollama' works in both dev (docker compose --profile dev) and prod
 # - api_key_env: Environment variable name for API key (null for local models)
 # - organization: Model provider/organization
 # - license: "proprietary" or "open-source"
@@ -23,7 +24,7 @@ models:
   - id: gemma3-fast
     name: Gemma 3 Fast
     model: gemma3:1b
-    base_url: http://localhost:11434/v1
+    base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Google
     license: open-source
@@ -32,7 +33,7 @@ models:
   - id: gemma3-creative
     name: Gemma 3 Creative
     model: gemma3:1b
-    base_url: http://localhost:11434/v1
+    base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Google
     license: open-source
@@ -41,7 +42,7 @@ models:
   - id: gemma3-analytical
     name: Gemma 3 Analytical
     model: gemma3:1b
-    base_url: http://localhost:11434/v1
+    base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Google
     license: open-source
@@ -50,7 +51,7 @@ models:
   - id: gemma3-concise
     name: Gemma 3 Concise
     model: gemma3:1b
-    base_url: http://localhost:11434/v1
+    base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Google
     license: open-source
@@ -59,7 +60,7 @@ models:
   - id: gemma3-detailed
     name: Gemma 3 Detailed
     model: gemma3:1b
-    base_url: http://localhost:11434/v1
+    base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Google
     license: open-source
@@ -68,7 +69,7 @@ models:
   - id: gemma3-balanced
     name: Gemma 3 Balanced
     model: gemma3:1b
-    base_url: http://localhost:11434/v1
+    base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Google
     license: open-source
@@ -77,7 +78,7 @@ models:
   - id: gemma3-technical
     name: Gemma 3 Technical
     model: gemma3:1b
-    base_url: http://localhost:11434/v1
+    base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Google
     license: open-source
@@ -86,7 +87,7 @@ models:
   - id: gemma3-casual
     name: Gemma 3 Casual
     model: gemma3:1b
-    base_url: http://localhost:11434/v1
+    base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Google
     license: open-source
@@ -95,7 +96,7 @@ models:
   - id: gemma3-formal
     name: Gemma 3 Formal
     model: gemma3:1b
-    base_url: http://localhost:11434/v1
+    base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Google
     license: open-source
@@ -104,7 +105,7 @@ models:
   - id: gemma3-friendly
     name: Gemma 3 Friendly
     model: gemma3:1b
-    base_url: http://localhost:11434/v1
+    base_url: http://ollama:11434/v1
     api_key_env: null
     organization: Google
     license: open-source
