@@ -4,9 +4,10 @@ Session repository for database operations
 
 from typing import Optional
 
-from llmbattler_shared.models import Session
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from llmbattler_shared.models import Session
 
 from .base import BaseRepository
 

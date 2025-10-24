@@ -5,7 +5,7 @@ SQLModel models for PostgreSQL (shared between backend and worker)
 from datetime import UTC, datetime
 from typing import Any, Dict, Optional
 
-from sqlalchemy import DateTime, JSON
+from sqlalchemy import JSON, DateTime
 from sqlmodel import Column, Field, SQLModel
 
 

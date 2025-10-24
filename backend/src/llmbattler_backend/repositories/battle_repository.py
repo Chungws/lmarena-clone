@@ -4,9 +4,10 @@ Battle repository for database operations
 
 from typing import Optional
 
-from llmbattler_shared.models import Battle
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from llmbattler_shared.models import Battle
 
 from .base import BaseRepository
 

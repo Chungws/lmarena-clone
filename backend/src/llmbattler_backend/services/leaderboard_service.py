@@ -5,10 +5,15 @@ Leaderboard business logic service
 from datetime import UTC, datetime
 from typing import List
 
-from llmbattler_shared.models import ModelStats, WorkerStatus
-from llmbattler_shared.schemas import LeaderboardMetadata, LeaderboardResponse, ModelStatsResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+
+from llmbattler_shared.models import ModelStats, WorkerStatus
+from llmbattler_shared.schemas import (
+    LeaderboardMetadata,
+    LeaderboardResponse,
+    ModelStatsResponse,
+)
 
 from ..repositories.model_stats_repository import ModelStatsRepository
 

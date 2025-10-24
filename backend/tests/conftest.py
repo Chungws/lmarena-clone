@@ -5,6 +5,7 @@ Pytest configuration and fixtures for backend tests
 import asyncio
 import os
 
+
 # IMPORTANT: Set test database URL and mock LLM BEFORE importing app
 # Use SQLite in-memory for fast, isolated tests
 os.environ["POSTGRES_URI"] = "sqlite+aiosqlite:///:memory:"
@@ -20,7 +21,12 @@ from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel
 
 from llmbattler_backend.main import app
-from llmbattler_backend.services.llm_client import MockLLMClient, reset_llm_client, set_llm_client
+from llmbattler_backend.services.llm_client import (
+    MockLLMClient,
+    reset_llm_client,
+    set_llm_client,
+)
+
 
 # Test database URL - SQLite in-memory for isolated, fast tests
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

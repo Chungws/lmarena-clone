@@ -6,7 +6,12 @@ from datetime import UTC, datetime
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from llmbattler_shared.schemas import LeaderboardMetadata, LeaderboardResponse, ModelStatsResponse
+
+from llmbattler_shared.schemas import (
+    LeaderboardMetadata,
+    LeaderboardResponse,
+    ModelStatsResponse,
+)
 
 
 def test_get_leaderboard_success(client: TestClient):

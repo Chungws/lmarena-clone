@@ -4,9 +4,10 @@ ModelStats repository for leaderboard data access
 
 from typing import List
 
-from llmbattler_shared.models import ModelStats
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from llmbattler_shared.models import ModelStats
 
 from .base import BaseRepository
 

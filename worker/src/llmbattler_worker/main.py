@@ -13,14 +13,16 @@ from typing import Dict
 import yaml
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
-from llmbattler_shared.config import settings
-from llmbattler_shared.logging_config import setup_logging
-from llmbattler_shared.models import WorkerStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from llmbattler_shared.config import settings
+from llmbattler_shared.logging_config import setup_logging
+from llmbattler_shared.models import WorkerStatus
+
 from .aggregators.elo_aggregator import ELOAggregator
 from .database import async_session_maker
+
 
 # Configure package-level logging
 # Child modules (e.g., llmbattler_worker.*) will inherit this configuration

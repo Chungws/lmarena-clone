@@ -18,11 +18,18 @@ import logging
 from datetime import UTC, datetime
 from typing import Dict, Optional
 
-from llmbattler_shared.models import ModelStats, Vote
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from .elo_calculator import INITIAL_ELO, calculate_ci, calculate_elo, get_score_from_vote
+from llmbattler_shared.models import ModelStats, Vote
+
+from .elo_calculator import (
+    INITIAL_ELO,
+    calculate_ci,
+    calculate_elo,
+    get_score_from_vote,
+)
+
 
 logger = logging.getLogger("llmbattler_worker.elo_aggregator")
 

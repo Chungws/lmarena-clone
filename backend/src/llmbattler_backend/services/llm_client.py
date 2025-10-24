@@ -14,10 +14,12 @@ import time
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
-from llmbattler_shared.config import settings
 from openai import AsyncOpenAI
 
+from llmbattler_shared.config import settings
+
 from .model_service import ModelConfig
+
 
 logger = logging.getLogger(__name__)
 

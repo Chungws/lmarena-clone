@@ -9,8 +9,10 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import yaml
+
 from llmbattler_shared.config import settings
 from llmbattler_shared.schemas import ModelInfo
+
 
 logger = logging.getLogger(__name__)
 

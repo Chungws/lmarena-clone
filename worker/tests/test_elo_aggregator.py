@@ -12,8 +12,9 @@ Tests vote aggregation workflow:
 from datetime import UTC, datetime
 
 import pytest
-from llmbattler_shared.models import ModelStats, Vote
 from sqlmodel import select
+
+from llmbattler_shared.models import ModelStats, Vote
 
 
 @pytest.mark.asyncio

@@ -5,11 +5,12 @@ Leaderboard API endpoints
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from llmbattler_shared.schemas import LeaderboardResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from llmbattler_backend.database import get_db
 from llmbattler_backend.services.leaderboard_service import LeaderboardService
+from llmbattler_shared.schemas import LeaderboardResponse
+
 
 logger = logging.getLogger(__name__)
 
