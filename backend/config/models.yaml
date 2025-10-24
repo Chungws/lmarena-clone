@@ -1,6 +1,24 @@
+# Model Configuration for llmbattler
+#
+# This file defines all available LLM models for battle mode.
+# All models must expose OpenAI-compatible /v1/chat/completions endpoint.
+#
+# Field descriptions:
+# - id: System internal ID (used in database)
+# - name: Display name for frontend
+# - model: Model name to send in API request (e.g., "gemma3:1b")
+# - base_url: Base URL for LLM API endpoint
+#   - Development: http://localhost:11434/v1
+#   - Production: http://ollama:11434/v1 (Docker service name)
+# - api_key_env: Environment variable name for API key (null for local models)
+# - organization: Model provider/organization
+# - license: "proprietary" or "open-source"
+# - status: "active" or "inactive" (inactive models won't be used in battles)
+
 models:
   # Test configuration: 10 variants of gemma3:1b for local battle testing
   # All route to the same model but generate different responses due to sampling
+  # (Useful when you can only run 1 model locally due to resource constraints)
 
   - id: gemma3-fast
     name: Gemma 3 Fast

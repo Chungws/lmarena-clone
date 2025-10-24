@@ -17,7 +17,7 @@ class Settings(BaseSettings):
         db_url = settings.postgres_uri
     """
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=["../.env", ".env"],  # Parent dir first, then current (current overrides)
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore"
