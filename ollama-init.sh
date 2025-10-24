@@ -19,7 +19,7 @@ max_attempts=30
 attempt=0
 
 while [ $attempt -lt $max_attempts ]; do
-    if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+    if ollama list > /dev/null 2>&1; then
         echo "[SUCCESS] Ollama server is ready!"
         break
     fi
