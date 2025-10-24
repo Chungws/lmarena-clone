@@ -5,30 +5,32 @@ Pytest configuration and fixtures for backend tests
 import asyncio
 import os
 
-# IMPORTANT: Set test database URL BEFORE importing app
-# This ensures the app connects to the test database
-os.environ["POSTGRES_URI"] = "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler_test"
+# IMPORTANT: Set test database URL and mock LLM BEFORE importing app
+# Use SQLite in-memory for fast, isolated tests
+os.environ["POSTGRES_URI"] = "sqlite+aiosqlite:///:memory:"
+os.environ["USE_MOCK_LLM"] = "true"
 
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel
 
 from llmbattler_backend.main import app
 from llmbattler_backend.services.llm_client import MockLLMClient, reset_llm_client, set_llm_client
 
-# Test database URL (use in-memory SQLite or test PostgreSQL)
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler_test"
+# Test database URL - SQLite in-memory for isolated, fast tests
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-# Create test engine with NullPool to avoid connection reuse issues
-
+# Create test engine with StaticPool for in-memory SQLite
+# StaticPool keeps single connection for :memory: DB
 test_engine = create_async_engine(
     TEST_DATABASE_URL,
     echo=False,
-    poolclass=NullPool,  # Don't pool connections in tests
+    connect_args={"check_same_thread": False},  # Required for SQLite
+    poolclass=StaticPool,  # Keep single connection for :memory: DB
 )
 
 # Create test session factory
@@ -80,15 +82,37 @@ def use_mock_llm():
 
 @pytest_asyncio.fixture(scope="function")
 async def client():
-    """Test client for FastAPI app with database setup"""
-    # Create all tables before test
+    """Test client for FastAPI app with in-memory SQLite database
+
+    Each test gets a fresh in-memory database that is automatically
+    destroyed when the test completes. No cleanup needed!
+    """
+    # Create all tables in in-memory DB
     async with test_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
+
+    # Override app's database dependency to use test database
+    async def override_get_db():
+        async with test_async_session_maker() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+            finally:
+                await session.close()
+
+    from llmbattler_backend.database import get_db
+
+    app.dependency_overrides[get_db] = override_get_db
 
     # Create test client
     with TestClient(app) as test_client:
         yield test_client
 
-    # Drop all tables after test
-    async with test_engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.drop_all)
+    # Clear dependency overrides
+    app.dependency_overrides.clear()
+
+    # Tables are automatically dropped when in-memory DB is closed
+    # No explicit cleanup needed for :memory: database

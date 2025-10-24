@@ -28,13 +28,28 @@ def _create_engine_and_session_maker(
     Returns:
         Tuple of (engine, session_maker)
     """
-    engine = create_async_engine(
-        settings.postgres_uri,
-        echo=False,
-        pool_size=pool_size,
-        max_overflow=max_overflow,
-        pool_timeout=pool_timeout,
-    )
+    # Check if using SQLite (for tests)
+    is_sqlite = "sqlite" in settings.postgres_uri.lower()
+
+    if is_sqlite:
+        # SQLite doesn't support pool configuration
+        from sqlalchemy.pool import StaticPool
+
+        engine = create_async_engine(
+            settings.postgres_uri,
+            echo=False,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool,
+        )
+    else:
+        # PostgreSQL with pool configuration
+        engine = create_async_engine(
+            settings.postgres_uri,
+            echo=False,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            pool_timeout=pool_timeout,
+        )
 
     session_maker = sessionmaker(
         engine,
