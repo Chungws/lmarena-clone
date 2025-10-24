@@ -103,7 +103,7 @@ test:
 # Run linters
 lint:
 	@echo "🔍 Running backend linters..."
-	@uvx ruff check && uvx ruff format --check && uvx isort --check --profile black .
+	@uvx ruff check && uvx ruff format --check
 	@echo ""
 	@echo "🔍 Running frontend linter..."
 	@cd frontend && npm run lint
