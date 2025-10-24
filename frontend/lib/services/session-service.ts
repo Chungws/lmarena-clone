@@ -5,6 +5,7 @@
  */
 
 import { apiClient } from "@/lib/apiClient";
+import type { ConversationMessage, VoteOption, BattleStatus } from "@/app/battle/_types";
 
 // ==================== Types ====================
 
@@ -24,12 +25,9 @@ export interface BattleItem {
   battle_id: string;
   left_model_id: string;
   right_model_id: string;
-  conversation: Array<{
-    role: string;
-    content: string;
-  }>;
-  status: string;
-  vote?: string;
+  conversation: ConversationMessage[];
+  status: BattleStatus;
+  vote?: VoteOption;
   created_at: string;
 }
 

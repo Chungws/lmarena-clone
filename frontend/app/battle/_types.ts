@@ -45,9 +45,12 @@ export interface VoteResponse {
 
 export interface ConversationMessage {
   role: "user" | "assistant";
-  position?: "left" | "right";
-  text: string;
+  content: string;
   timestamp?: string;
+  // Assistant-only fields
+  position?: "left" | "right";
+  model_id?: string;
+  latency_ms?: number;
 }
 
 export interface Battle {
