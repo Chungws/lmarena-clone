@@ -50,8 +50,9 @@ class Settings(BaseSettings):
     worker_timezone: str = "UTC"
 
     # LLM API timeouts (seconds)
+    # Note: CPU inference can take 30-60s per request, so read timeout should be higher
     llm_connect_timeout: int = 5
-    llm_read_timeout: int = 30
+    llm_read_timeout: int = 90
     llm_write_timeout: int = 5
     llm_pool_timeout: int = 5
 
