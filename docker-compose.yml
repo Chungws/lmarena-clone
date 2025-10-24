@@ -58,7 +58,7 @@ services:
     environment:
       - POSTGRES_URI=${POSTGRES_URI:?POSTGRES_URI is required}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
-      - MODELS_CONFIG_PATH=${MODELS_CONFIG_PATH:-/app/backend/config/models.yaml}
+      - MODELS_CONFIG_PATH=${MODELS_CONFIG_PATH:-/app/config/models.yaml}
       - LLM_CONNECT_TIMEOUT=${LLM_CONNECT_TIMEOUT:-10}
       - LLM_READ_TIMEOUT=${LLM_READ_TIMEOUT:-60}
       - LLM_WRITE_TIMEOUT=${LLM_WRITE_TIMEOUT:-10}
@@ -74,7 +74,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/config:/app/backend/config:ro
+      - ./config:/app/config:ro
     depends_on:
       postgres:
         condition: service_healthy
