@@ -53,7 +53,7 @@ export function ResponseCard({
                   You
                 </div>
                 <div className="text-sm bg-accent/10 p-4 rounded-lg border border-accent/20">
-                  {userMsg.text}
+                  {userMsg.content}
                 </div>
                 {assistantMessages[idx] && (
                   <>
@@ -61,7 +61,7 @@ export function ResponseCard({
                       {title}
                     </div>
                     <div className="text-sm p-4 rounded-lg bg-card border-2">
-                      {assistantMessages[idx].text}
+                      {assistantMessages[idx].content}
                     </div>
                   </>
                 )}
