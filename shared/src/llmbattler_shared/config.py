@@ -16,15 +16,15 @@ class Settings(BaseSettings):
 
         db_url = settings.postgres_uri
     """
+
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
     # Database URLs
-    postgres_uri: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler"
+    postgres_uri: str = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler"
+    )
 
     # CORS settings (backend only)
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
@@ -32,7 +32,9 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse CORS origins from comma-separated string"""
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        return [
+            origin.strip() for origin in self.cors_origins.split(",") if origin.strip()
+        ]
 
     # Model configuration (relative to project root)
     models_config_path: str = "config/models.yaml"
@@ -52,7 +54,9 @@ class Settings(BaseSettings):
     llm_retry_backoff_base: float = 1.0  # Base delay in seconds (1s, 2s, 4s)
 
     # LLM Mock Mode (for development and testing)
-    use_mock_llm: bool = False  # Set to True to use mock LLM client instead of real API calls
+    use_mock_llm: bool = (
+        False  # Set to True to use mock LLM client instead of real API calls
+    )
 
     # Battle settings
     max_follow_ups: int = 5  # Maximum 5 follow-ups (6 total messages)
@@ -76,3 +80,13 @@ class Settings(BaseSettings):
 
 # Singleton instance
 settings = Settings()
+
+
+# Multi-assistant system prompt
+# Used when assembling session-wide conversation history for LLM requests
+MULTI_ASSISTANT_SYSTEM_PROMPT = (
+    "You are participating in a multi-model comparison system. "
+    "Multiple AI assistants are responding to the same conversation. "
+    "Each 'assistant' message may be from a different AI model. "
+    "Continue the conversation naturally without mentioning this setup to the user."
+)
