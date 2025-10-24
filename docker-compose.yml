@@ -129,7 +129,7 @@ services:
     image: ollama/ollama:latest
     container_name: llmbattler-ollama
     environment:
-      - OLLAMA_MODELS=${OLLAMA_MODELS:-llama3.1:8b,qwen2.5:7b}
+      - OLLAMA_DOWNLOAD_MODELS=${OLLAMA_DOWNLOAD_MODELS:-llama3.1:8b,qwen2.5:7b}
     ports:
       - "11434:11434"
     volumes:
