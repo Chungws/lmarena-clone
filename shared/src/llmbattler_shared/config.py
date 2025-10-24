@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     models_config_path: str = "config/models.yaml"
 
     # Worker settings
-    worker_interval_hours: int = 1  # Run worker every N hours
+    worker_interval_minutes: int = 60  # Run worker every N minutes
     worker_timezone: str = "UTC"
 
     # LLM API timeouts (seconds)

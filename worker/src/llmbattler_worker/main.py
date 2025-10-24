@@ -189,35 +189,36 @@ async def main():
     """
     Start worker with scheduler
 
-    Runs hourly at :00 UTC by default
-    Configurable via WORKER_INTERVAL_HOURS environment variable
+    Runs every 60 minutes (hourly) at :00 UTC by default
+    Configurable via WORKER_INTERVAL_MINUTES environment variable
     """
     logger.info("Starting llmbattler-worker...")
-    logger.info(f"Scheduler: Every {settings.worker_interval_hours} hour(s) at :00")
+    logger.info(f"Scheduler: Every {settings.worker_interval_minutes} minute(s)")
 
     # Create async scheduler
     scheduler = AsyncIOScheduler(timezone=settings.worker_timezone)
 
-    # Schedule hourly aggregation
-    # Note: For interval=1, use CronTrigger for precise :00 execution
-    # For other intervals, CronTrigger with hour="*" still works (runs every hour)
-    if settings.worker_interval_hours == 1:
+    # Schedule aggregation
+    # Note: For interval=60 minutes (1 hour), use CronTrigger for precise :00 execution
+    # For other intervals, use IntervalTrigger
+    if settings.worker_interval_minutes == 60:
         # Run every hour at :00
         trigger = CronTrigger(
             hour="*",
             minute="0",
             timezone=settings.worker_timezone,
         )
+        logger.info("Using CronTrigger: every hour at :00")
     else:
-        # For intervals > 1 hour, use IntervalTrigger
-        # This runs every N hours from the start time
+        # For other intervals, use IntervalTrigger
+        # This runs every N minutes from the start time
         from apscheduler.triggers.interval import IntervalTrigger
 
         trigger = IntervalTrigger(
-            hours=settings.worker_interval_hours,
+            minutes=settings.worker_interval_minutes,
             timezone=settings.worker_timezone,
         )
-        logger.info(f"Using IntervalTrigger: every {settings.worker_interval_hours} hours")
+        logger.info(f"Using IntervalTrigger: every {settings.worker_interval_minutes} minutes")
 
     scheduler.add_job(
         run_aggregation,
