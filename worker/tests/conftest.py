@@ -6,27 +6,30 @@ import os
 
 
 # IMPORTANT: Set test database URL BEFORE importing any modules
-# This ensures the worker connects to the test database
-os.environ["POSTGRES_URI"] = "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler_test"
+# Use SQLite in-memory for fast, isolated tests
+os.environ["POSTGRES_URI"] = "sqlite+aiosqlite:///:memory:"
 
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel
 
 
-# Test database URL (use test PostgreSQL database)
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/llmbattler_test"
+# Test database URL - SQLite in-memory for isolated, fast tests
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 
 @pytest_asyncio.fixture(scope="function")
 async def test_db_session():
     """Database session fixture for tests"""
-    # Create engine per test to avoid connection pool issues
+    # Create engine with StaticPool for in-memory SQLite
+    # StaticPool keeps single connection for :memory: DB
     engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
-        pool_pre_ping=True,
+        connect_args={"check_same_thread": False},  # Required for SQLite
+        poolclass=StaticPool,  # Keep single connection for :memory: DB
     )
 
     # Create all tables
