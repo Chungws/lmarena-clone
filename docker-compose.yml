@@ -19,13 +19,14 @@
 #   docker compose --env-file .env.prod up -d
 
 services:
-  # Database
+  # Database (used in both dev and prod)
   postgres:
+    profiles: ["dev", "prod"]
     image: postgres:16-alpine
     container_name: llmbattler-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}  # Dev: postgres, Prod: set in .env
       POSTGRES_DB: ${POSTGRES_DB:-llmbattler}
       POSTGRES_INITDB_ARGS: "-E UTF8"
     ports:
@@ -47,8 +48,9 @@ services:
           memory: 2g
           cpus: '2.0'
 
-  # Backend API
+  # Backend API (production only)
   backend:
+    profiles: ["prod"]
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -56,7 +58,7 @@ services:
     environment:
       - POSTGRES_URI=${POSTGRES_URI:?POSTGRES_URI is required}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
-      - MODELS_CONFIG_PATH=${MODELS_CONFIG_PATH:-/app/backend/config/models.yaml}
+      - MODELS_CONFIG_PATH=${MODELS_CONFIG_PATH:-/app/config/models.yaml}
       - LLM_CONNECT_TIMEOUT=${LLM_CONNECT_TIMEOUT:-10}
       - LLM_READ_TIMEOUT=${LLM_READ_TIMEOUT:-60}
       - LLM_WRITE_TIMEOUT=${LLM_WRITE_TIMEOUT:-10}
@@ -72,7 +74,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/config:/app/backend/config:ro
+      - ./config:/app/config:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,8 +93,9 @@ services:
           memory: ${BACKEND_MEMORY_LIMIT:-2g}
           cpus: ${BACKEND_CPU_LIMIT:-2.0}
 
-  # Worker (ELO aggregation)
+  # Worker (ELO aggregation) - production only
   worker:
+    profiles: ["prod"]
     build:
       context: .
       dockerfile: worker/Dockerfile
@@ -120,12 +123,13 @@ services:
           memory: ${WORKER_MEMORY_LIMIT:-1g}
           cpus: ${WORKER_CPU_LIMIT:-1.0}
 
-  # Ollama (Self-hosted LLM inference)
+  # Ollama (Self-hosted LLM inference) - dev and production
   ollama:
+    profiles: ["dev", "prod"]
     image: ollama/ollama:latest
     container_name: llmbattler-ollama
     environment:
-      - OLLAMA_MODELS=${OLLAMA_MODELS:-llama3.1:8b,qwen2.5:7b}
+      - OLLAMA_DOWNLOAD_MODELS=${OLLAMA_DOWNLOAD_MODELS:-llama3.1:8b,qwen2.5:7b}
     ports:
       - "11434:11434"
     volumes:
@@ -133,7 +137,7 @@ services:
       - ./ollama-init.sh:/ollama-init.sh:ro
     entrypoint: ["/bin/bash", "/ollama-init.sh"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ["CMD", "ollama", "list"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -151,8 +155,9 @@ services:
     # environment:
     #   - NVIDIA_VISIBLE_DEVICES=all
 
-  # Frontend
+  # Frontend - production only
   frontend:
+    profiles: ["prod"]
     build:
       context: frontend
       dockerfile: Dockerfile

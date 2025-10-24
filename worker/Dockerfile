@@ -10,8 +10,8 @@ RUN apt-get update && \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-RUN pip install uv
+# Copy uv from official image (recommended by uv docs)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Copy workspace root files
 COPY pyproject.toml uv.lock ./
@@ -23,14 +23,16 @@ COPY shared/ ./shared/
 COPY worker/ ./worker/
 
 # Sync workspace dependencies (includes shared package)
-RUN uv sync --frozen
+RUN --mount=type=cache,target=/root/.cache/uv \
+    UV_COMPILE_BYTECODE=1 \
+    uv sync --frozen
 
 # Copy entrypoint script
 COPY worker/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Set entrypoint to wait for database before starting worker
+# Set entrypoint
 ENTRYPOINT ["/app/entrypoint.sh"]
 
-# Run worker
+# Run worker via uv run
 CMD ["uv", "run", "--package", "llmbattler-worker", "python", "-m", "llmbattler_worker.main"]

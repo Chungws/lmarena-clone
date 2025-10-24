@@ -59,40 +59,49 @@ This project follows specific policies. **Always check before starting work.**
 - Node.js 18+
 - Docker & Docker Compose
 - uv (Python package manager): `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- Make (usually pre-installed on macOS/Linux)
 
-### Setup
+### Setup with Makefile (Recommended)
 
 ```bash
 # Clone repository
 git clone https://github.com/Chungws/lmarena-clone.git
 cd lmarena-clone
 
-# Start infrastructure (PostgreSQL + MongoDB)
-docker compose -f docker-compose.dev.yml up -d
+# Install dependencies (Python workspace + Frontend)
+make setup
 
-# Workspace setup (installs all Python packages)
-uv sync                                  # Sync entire workspace
+# Configure environment
+cp .env.example .env
+# Edit .env if needed (defaults work for local development)
 
-# Backend (in terminal 1)
-cd backend
-uv run alembic upgrade head              # Run migrations
-uv run uvicorn llmbattler_backend.main:app --reload --port 8000
+# Start infrastructure (PostgreSQL + Ollama)
+make dev-infra
 
-# Frontend (in terminal 2)
-cd frontend
-npm install
-npm run dev                              # Port 3000
+# Run services in separate terminals
+# Terminal 1: Backend API
+make dev-backend
 
-# Worker (optional for local dev, in terminal 3)
-cd worker
-uv run python -m llmbattler_worker.main  # Run aggregation manually
+# Terminal 2: Frontend
+make dev-frontend
+
+# Terminal 3: Worker (optional for local dev)
+make dev-worker
 ```
 
-**Alternative: Run from workspace root**
+**Available Make Commands:**
 ```bash
-# After uv sync, you can run from root directory
-uv run --package llmbattler-backend uvicorn llmbattler_backend.main:app --reload
-uv run --package llmbattler-worker python -m llmbattler_worker.main
+make help         # Show all available commands
+make setup        # Install dependencies (first time only)
+make dev          # Start infrastructure and show instructions
+make dev-infra    # Start PostgreSQL + Ollama
+make dev-backend  # Start Backend API (port 8000)
+make dev-frontend # Start Frontend (port 3000)
+make dev-worker   # Run Worker (vote aggregation)
+make stop         # Stop Docker services
+make clean        # Stop and remove all data (WARNING: deletes DB)
+make test         # Run all tests
+make lint         # Run all linters
 ```
 
 **Endpoints:**
@@ -100,14 +109,50 @@ uv run --package llmbattler-worker python -m llmbattler_worker.main
 - Backend API: http://localhost:8000
 - API Docs: http://localhost:8000/docs
 
+### Alternative: Manual Setup (Without Makefile)
+
+```bash
+# Clone repository
+git clone https://github.com/Chungws/lmarena-clone.git
+cd lmarena-clone
+
+# Install dependencies
+uv sync                      # Python workspace (backend + worker + shared)
+cd frontend && npm install   # Frontend
+
+# Configure environment
+cp .env.example .env
+
+# Start infrastructure (PostgreSQL + Ollama)
+docker compose --profile dev up -d
+
+# Backend (in terminal 1)
+cd backend
+uv run alembic upgrade head
+uv run uvicorn llmbattler_backend.main:app --reload --port 8000
+
+# Frontend (in terminal 2)
+cd frontend
+npm run dev
+
+# Worker (optional for local dev, in terminal 3)
+cd worker
+uv run python -m llmbattler_worker.main
+```
+
 ### Pre-Commit Checks
+
+**Quick check (all services):**
+```bash
+make lint  # Run all linters
+make test  # Run all tests
+```
 
 **Backend changes:**
 ```bash
 cd backend
 uvx ruff check
 uvx ruff format --check
-uvx isort --check --profile black .
 uv run pytest -s
 ```
 
@@ -123,7 +168,6 @@ npm run lint
 cd worker
 uvx ruff check
 uvx ruff format --check
-uvx isort --check --profile black .
 uv run pytest -s
 ```
 

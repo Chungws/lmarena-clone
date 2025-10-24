@@ -7,11 +7,10 @@ connection pool configurations for each use case.
 
 from typing import AsyncGenerator
 
+from llmbattler_shared.config import settings
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
-
-from llmbattler_shared.config import settings
 
 
 def _create_engine_and_session_maker(

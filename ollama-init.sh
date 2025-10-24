@@ -19,7 +19,7 @@ max_attempts=30
 attempt=0
 
 while [ $attempt -lt $max_attempts ]; do
-    if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+    if ollama list > /dev/null 2>&1; then
         echo "[SUCCESS] Ollama server is ready!"
         break
     fi
@@ -33,12 +33,12 @@ if [ $attempt -eq $max_attempts ]; then
     exit 1
 fi
 
-# Download models if OLLAMA_MODELS is set
-if [ -n "$OLLAMA_MODELS" ]; then
-    echo "[INFO] Models to download: $OLLAMA_MODELS"
+# Download models if OLLAMA_DOWNLOAD_MODELS is set
+if [ -n "$OLLAMA_DOWNLOAD_MODELS" ]; then
+    echo "[INFO] Models to download: $OLLAMA_DOWNLOAD_MODELS"
 
     # Split comma-separated models
-    IFS=',' read -ra MODELS <<< "$OLLAMA_MODELS"
+    IFS=',' read -ra MODELS <<< "$OLLAMA_DOWNLOAD_MODELS"
 
     for model in "${MODELS[@]}"; do
         # Trim whitespace
@@ -64,7 +64,7 @@ if [ -n "$OLLAMA_MODELS" ]; then
     echo "[SUCCESS] Model initialization complete!"
     echo "=========================================="
 else
-    echo "[INFO] No models specified in OLLAMA_MODELS, skipping downloads"
+    echo "[INFO] No models specified in OLLAMA_DOWNLOAD_MODELS, skipping downloads"
 fi
 
 # List all available models

@@ -5,11 +5,20 @@ Battle API endpoints
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from llmbattler_shared.schemas import FollowUpCreate, FollowUpResponse, VoteCreate, VoteResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from llmbattler_backend.database import get_db
-from llmbattler_backend.services.session_service import add_follow_up_message, vote_on_battle
+from llmbattler_backend.services.session_service import (
+    add_follow_up_message,
+    vote_on_battle,
+)
+from llmbattler_shared.schemas import (
+    FollowUpCreate,
+    FollowUpResponse,
+    VoteCreate,
+    VoteResponse,
+)
+
 
 logger = logging.getLogger(__name__)
 

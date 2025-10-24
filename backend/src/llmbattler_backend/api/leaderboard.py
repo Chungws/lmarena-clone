@@ -5,11 +5,13 @@ Leaderboard API endpoints
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from llmbattler_shared.schemas import LeaderboardResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from llmbattler_backend.database import get_db
 from llmbattler_backend.services.leaderboard_service import LeaderboardService
+from llmbattler_shared.config import settings
+from llmbattler_shared.schemas import LeaderboardResponse
+
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,9 @@ async def get_leaderboard(
     """
     try:
         service = LeaderboardService(db)
-        leaderboard = await service.get_leaderboard(min_vote_count=5)
+        leaderboard = await service.get_leaderboard(
+            min_vote_count=settings.min_votes_for_leaderboard
+        )
         return leaderboard
 
     except Exception as e:

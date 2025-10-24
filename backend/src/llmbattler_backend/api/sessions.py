@@ -5,14 +5,6 @@ Session API endpoints
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from llmbattler_shared.schemas import (
-    BattleCreate,
-    BattleListResponse,
-    BattleResponse,
-    SessionCreate,
-    SessionListResponse,
-    SessionResponse,
-)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from llmbattler_backend.database import get_db
@@ -22,6 +14,15 @@ from llmbattler_backend.services.session_service import (
     get_battles_by_session,
     get_sessions_by_user,
 )
+from llmbattler_shared.schemas import (
+    BattleCreate,
+    BattleListResponse,
+    BattleResponse,
+    SessionCreate,
+    SessionListResponse,
+    SessionResponse,
+)
+
 
 logger = logging.getLogger(__name__)
 

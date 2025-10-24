@@ -6,8 +6,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from llmbattler_shared.config import settings
-from llmbattler_shared.logging_config import setup_logging
 
 from llmbattler_backend.api import battles, leaderboard, models, sessions
 from llmbattler_backend.services.llm_client import (
@@ -15,6 +13,9 @@ from llmbattler_backend.services.llm_client import (
     OpenAILLMClient,
     set_llm_client,
 )
+from llmbattler_shared.config import settings
+from llmbattler_shared.logging_config import setup_logging
+
 
 # Configure logging
 logger = setup_logging("llmbattler_backend")

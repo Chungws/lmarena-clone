@@ -9,14 +9,16 @@ import uuid
 from datetime import UTC, datetime
 from typing import Dict, List, Optional
 
-from llmbattler_shared.config import MULTI_ASSISTANT_SYSTEM_PROMPT
-from llmbattler_shared.models import Battle, Message, Session, Turn
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from llmbattler_shared.config import MULTI_ASSISTANT_SYSTEM_PROMPT
+from llmbattler_shared.models import Battle, Message, Session, Turn
 
 from ..repositories import BattleRepository, SessionRepository, VoteRepository
 from .llm_client import get_llm_client
 from .model_service import get_model_service
+
 
 logger = logging.getLogger(__name__)
 

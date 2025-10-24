@@ -4,6 +4,9 @@
 
 set -e
 
+# Ensure PATH includes virtual environment
+export PATH="/app/.venv/bin:$PATH"
+
 echo "=========================================="
 echo "Backend Initialization"
 echo "=========================================="
@@ -39,14 +42,18 @@ fi
 # Run database migrations
 echo "=========================================="
 echo "[INFO] Running database migrations..."
+
+# Run alembic using uv run (which handles the virtual environment)
 cd /app/backend
 
-if uv run alembic upgrade head; then
+if uv run --package llmbattler-backend alembic upgrade head; then
     echo "[SUCCESS] Database migrations completed"
 else
     echo "[ERROR] Database migrations failed"
     exit 1
 fi
+
+cd /app
 
 echo "=========================================="
 echo "[INFO] Starting FastAPI server..."

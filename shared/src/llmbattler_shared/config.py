@@ -18,7 +18,13 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
+        env_file=[
+            "../.env",
+            ".env",
+        ],  # Parent dir first, then current (current overrides)
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
     )
 
     # Database URLs
@@ -36,16 +42,19 @@ class Settings(BaseSettings):
             origin.strip() for origin in self.cors_origins.split(",") if origin.strip()
         ]
 
-    # Model configuration (relative to project root)
-    models_config_path: str = "config/models.yaml"
+    # Model configuration
+    # Local dev: ../config/models.yaml (relative to backend/ or worker/)
+    # Production: /app/config/models.yaml (absolute path in Docker)
+    models_config_path: str = "../config/models.yaml"
 
     # Worker settings
-    worker_interval_hours: int = 1  # Run worker every N hours
+    worker_interval_minutes: int = 60  # Run worker every N minutes
     worker_timezone: str = "UTC"
 
     # LLM API timeouts (seconds)
+    # Note: CPU inference can take 30-60s per request, so read timeout should be higher
     llm_connect_timeout: int = 5
-    llm_read_timeout: int = 30
+    llm_read_timeout: int = 90
     llm_write_timeout: int = 5
     llm_pool_timeout: int = 5
 

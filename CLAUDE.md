@@ -40,12 +40,17 @@ git branch --show-current
 
 ### 3. Pre-Commit Checklist (Must Pass)
 
+**Quick check (all services):**
+```bash
+make lint  # Run all linters
+make test  # Run all tests
+```
+
 **Backend changes:**
 ```bash
 cd backend
 uvx ruff check
 uvx ruff format --check
-uvx isort --check --profile black .
 uv run pytest -s
 ```
 
@@ -61,7 +66,6 @@ npm run lint
 cd worker
 uvx ruff check
 uvx ruff format --check
-uvx isort --check --profile black .
 uv run pytest -s
 ```
 
@@ -85,31 +89,60 @@ uv run pytest -s
 
 ## 🚀 Quick Start
 
-### Infrastructure (Docker Compose)
+### Initial Setup (First Time)
 ```bash
-docker compose up -d                     # Start PostgreSQL + MongoDB
+# Install dependencies
+make setup
+
+# Configure environment
+cp .env.example .env
+# Edit .env if needed (defaults work for local development)
 ```
 
-### Backend (FastAPI)
+### Development Workflow
+
+**Makefile Commands (Recommended):**
+```bash
+# Start infrastructure (PostgreSQL + Ollama)
+make dev-infra
+
+# Run services in separate terminals
+Terminal 1: make dev-backend   # Backend API (port 8000)
+Terminal 2: make dev-frontend  # Frontend (port 3000)
+Terminal 3: make dev-worker    # Worker (optional for local dev)
+
+# Stop infrastructure
+make stop
+
+# Run tests and linters
+make test
+make lint
+```
+
+**Alternative: Manual Commands**
+
+Infrastructure:
+```bash
+docker compose --profile dev up -d   # Start PostgreSQL + Ollama
+```
+
+Backend:
 ```bash
 cd backend
-uv sync                                  # Install dependencies
-uv run alembic upgrade head             # Run migrations (PostgreSQL)
-uv run uvicorn app.main:app --reload --port 8000
+uv run alembic upgrade head          # Run migrations
+uv run uvicorn llmbattler_backend.main:app --reload --port 8000
 ```
 
-### Frontend (Next.js 15)
+Frontend:
 ```bash
 cd frontend
-npm install
 npm run dev  # Port 3000
 ```
 
-### Worker (Data Aggregation)
+Worker:
 ```bash
 cd worker
-uv sync                                  # Install dependencies
-uv run python -m app.main               # Run hourly aggregation worker
+uv run python -m llmbattler_worker.main  # Run aggregation manually
 ```
 
 🔗 **Full setup guide:** [WORKSPACE/00_PROJECT.md#quick-start](./WORKSPACE/00_PROJECT.md)
@@ -118,14 +151,30 @@ uv run python -m app.main               # Run hourly aggregation worker
 
 ## 🤖 Workflow Commands
 
+**Makefile Commands:**
+```bash
+make help         # Show all available commands
+make setup        # Install dependencies (first time only)
+make dev          # Start infrastructure and show instructions
+make dev-infra    # Start PostgreSQL + Ollama
+make dev-backend  # Start Backend API
+make dev-frontend # Start Frontend
+make dev-worker   # Run Worker (vote aggregation)
+make stop         # Stop Docker services
+make clean        # Stop and remove all data (WARNING: deletes DB)
+make test         # Run all tests
+make lint         # Run all linters
+```
+
 **Custom slash commands will be configured later.**
 
 Common workflow:
 1. Create feature branch: `git checkout -b feature/your-feature-name`
-2. Develop and test locally
-3. Run pre-commit checks (linting, tests)
-4. Commit and push
-5. Create GitHub Pull Request
+2. Start infrastructure: `make dev-infra`
+3. Develop and test locally
+4. Run pre-commit checks: `make lint && make test`
+5. Commit and push
+6. Create GitHub Pull Request
 
 ---
 
@@ -217,4 +266,4 @@ Planned agents:
 
 ---
 
-**Last Updated:** 2025-10-23
+**Last Updated:** 2025-10-25

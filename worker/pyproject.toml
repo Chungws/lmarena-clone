@@ -11,6 +11,7 @@ dependencies = [
     "pydantic-settings>=2.7.1",
     "llmbattler-shared",
     "sqlalchemy>=2.0.44",
+    "pyyaml>=6.0.3",
 ]
 
 [project.optional-dependencies]
@@ -35,6 +36,12 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
 ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["llmbattler_worker", "llmbattler_shared"]
+force-single-line = false
+lines-after-imports = 2
+split-on-trailing-comma = true
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

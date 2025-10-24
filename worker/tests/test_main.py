@@ -5,9 +5,9 @@ Tests for worker main module
 from datetime import UTC, datetime
 
 import pytest
-from llmbattler_shared.models import Vote, WorkerStatus
 from sqlmodel import select
 
+from llmbattler_shared.models import Vote, WorkerStatus
 from llmbattler_worker.main import run_aggregation
 
 
