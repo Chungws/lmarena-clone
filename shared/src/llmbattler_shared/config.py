@@ -18,7 +18,10 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=["../.env", ".env"],  # Parent dir first, then current (current overrides)
+        env_file=[
+            "../.env",
+            ".env",
+        ],  # Parent dir first, then current (current overrides)
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -40,7 +43,7 @@ class Settings(BaseSettings):
         ]
 
     # Model configuration (relative to project root)
-    models_config_path: str = "config/models.yaml"
+    models_config_path: str = "backend/config/models.yaml"
 
     # Worker settings
     worker_interval_hours: int = 1  # Run worker every N hours
