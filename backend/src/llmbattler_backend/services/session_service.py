@@ -7,9 +7,11 @@ import logging
 import random
 import uuid
 from datetime import UTC, datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
-from llmbattler_shared.models import Battle, Session
+from llmbattler_shared.config import MULTI_ASSISTANT_SYSTEM_PROMPT
+from llmbattler_shared.models import Battle, Message, Session, Turn
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..repositories import BattleRepository, SessionRepository, VoteRepository
@@ -17,6 +19,78 @@ from .llm_client import get_llm_client
 from .model_service import get_model_service
 
 logger = logging.getLogger(__name__)
+
+
+async def get_session_messages(
+    db: AsyncSession,
+    session_id: str,
+) -> List[Dict[str, str]]:
+    """
+    Assemble session-wide conversation with multi-assistant responses.
+
+    This function creates a conversation history for LLM API calls by:
+    1. Adding a system prompt explaining the multi-assistant setup
+    2. Iterating through all battles in the session (ordered by seq_in_session)
+    3. For each turn in each battle, adding the user input and assistant responses
+
+    The result is a conversation where multiple assistant messages follow each
+    user message, representing responses from different models across battles.
+
+    Args:
+        db: Database session
+        session_id: Session ID
+
+    Returns:
+        List of messages in OpenAI chat format:
+        [
+            {"role": "system", "content": "..."},
+            {"role": "user", "content": "..."},
+            {"role": "assistant", "content": "..."},  # Battle 1 left
+            {"role": "assistant", "content": "..."},  # Battle 1 right
+            {"role": "user", "content": "..."},
+            {"role": "assistant", "content": "..."},  # Battle 2 left
+            {"role": "assistant", "content": "..."},  # Battle 2 right
+            ...
+        ]
+    """
+    # Start with system prompt
+    messages = [{"role": "system", "content": MULTI_ASSISTANT_SYSTEM_PROMPT}]
+
+    # Fetch all messages for the session, sorted by ordering fields
+    result = await db.execute(
+        select(Message)
+        .filter(Message.session_id == session_id)
+        .order_by(
+            Message.battle_seq_in_session,
+            Message.turn_seq,
+            Message.seq_in_turn,
+        )
+    )
+    all_messages = result.scalars().all()
+
+    # Fetch all turns for the session to get user inputs
+    result = await db.execute(
+        select(Turn).filter(Turn.session_id == session_id).order_by(Turn.seq)
+    )
+    turns = result.scalars().all()
+
+    # Create turn_id -> user_input mapping
+    turn_map = {turn.turn_id: turn.user_input for turn in turns}
+
+    # Assemble conversation
+    current_turn_id = None
+    for message in all_messages:
+        # Add user message when turn changes
+        if message.turn_id != current_turn_id:
+            current_turn_id = message.turn_id
+            user_input = turn_map.get(current_turn_id)
+            if user_input:
+                messages.append({"role": "user", "content": user_input})
+
+        # Add assistant message
+        messages.append({"role": "assistant", "content": message.content})
+
+    return messages
 
 
 async def create_session_with_battle(
@@ -100,51 +174,71 @@ async def create_session_with_battle(
         await db.rollback()
         raise Exception(f"Failed to get LLM responses: {str(e)}")
 
-    # 5. Create battle with conversation
+    # 5. Create battle
     battle_id = f"battle_{uuid.uuid4().hex[:12]}"
-
-    conversation = [
-        {
-            "role": "user",
-            "content": prompt,
-            "timestamp": datetime.now(UTC).isoformat(),
-        },
-        {
-            "role": "assistant",
-            "model_id": left_model.id,
-            "position": "left",
-            "content": left_response.content,
-            "latency_ms": left_response.latency_ms,
-            "timestamp": datetime.now(UTC).isoformat(),
-        },
-        {
-            "role": "assistant",
-            "model_id": right_model.id,
-            "position": "right",
-            "content": right_response.content,
-            "latency_ms": right_response.latency_ms,
-            "timestamp": datetime.now(UTC).isoformat(),
-        },
-    ]
 
     battle = Battle(
         battle_id=battle_id,
         session_id=session_id,
         left_model_id=left_model.id,
         right_model_id=right_model.id,
-        conversation=conversation,
+        seq_in_session=0,  # First battle in session
         status="ongoing",
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
     )
     battle = await battle_repo.create(battle)
 
-    # Commit both session and battle
+    # 6. Create Turn record
+    turn_id = f"turn_{uuid.uuid4().hex[:12]}"
+    turn = Turn(
+        turn_id=turn_id,
+        session_id=session_id,
+        battle_id=battle_id,
+        battle_seq_in_session=0,  # First battle
+        seq=0,  # First turn in battle
+        user_input=prompt,
+        created_at=datetime.now(UTC),
+    )
+    db.add(turn)
+
+    # 7. Create Message records
+    left_message = Message(
+        message_id=f"msg_{uuid.uuid4().hex[:12]}",
+        turn_id=turn_id,
+        session_id=session_id,
+        battle_id=battle_id,
+        battle_seq_in_session=0,
+        turn_seq=0,
+        seq_in_turn=0,  # Left = 0
+        session_seq=0,  # First message in session
+        side="left",
+        content=left_response.content,
+        created_at=datetime.now(UTC),
+    )
+    db.add(left_message)
+
+    right_message = Message(
+        message_id=f"msg_{uuid.uuid4().hex[:12]}",
+        turn_id=turn_id,
+        session_id=session_id,
+        battle_id=battle_id,
+        battle_seq_in_session=0,
+        turn_seq=0,
+        seq_in_turn=1,  # Right = 1
+        session_seq=1,  # Second message in session
+        side="right",
+        content=right_response.content,
+        created_at=datetime.now(UTC),
+    )
+    db.add(right_message)
+
+    # Commit session, battle, turn, and messages
     await db.commit()
 
-    logger.info(f"Battle created: {battle_id}")
+    logger.info(f"Battle created: {battle_id}, Turn: {turn_id}, Messages: left+right")
 
-    # 6. Return anonymous responses
+    # 8. Return anonymous responses
     return {
         "session_id": session_id,
         "battle_id": battle_id,
@@ -209,7 +303,16 @@ async def create_battle_in_session(
     session.last_active_at = datetime.now(UTC)
     session = await session_repo.update(session)
 
-    # 3. Select 2 NEW random models
+    # 3. Get session-wide history and determine seq_in_session
+    session_history = await get_session_messages(db, session_id)
+
+    # Count existing battles to determine seq_in_session
+    existing_battles = await battle_repo.get_by_session_id(session_id)
+    battle_seq = len(existing_battles)
+
+    logger.info(f"Session has {battle_seq} existing battles, new battle will be #{battle_seq}")
+
+    # 4. Select 2 NEW random models
     model_service = get_model_service()
     model_a, model_b = model_service.select_models_for_battle()
 
@@ -221,10 +324,13 @@ async def create_battle_in_session(
 
     logger.info(f"Models selected: left={left_model.id}, right={right_model.id}")
 
-    # 4. Call LLMs in parallel
+    # 5. Call LLMs with session-wide history
     llm_client = get_llm_client()
 
-    messages = [{"role": "user", "content": prompt}]
+    # Add new prompt to session history
+    messages = session_history + [{"role": "user", "content": prompt}]
+
+    logger.info(f"Calling LLMs with session-wide history ({len(messages)} messages)")
 
     try:
         # Parallel API calls
@@ -245,51 +351,79 @@ async def create_battle_in_session(
         await db.rollback()
         raise Exception(f"Failed to get LLM responses: {str(e)}")
 
-    # 5. Create battle with conversation
+    # 6. Create battle
     battle_id = f"battle_{uuid.uuid4().hex[:12]}"
-
-    conversation = [
-        {
-            "role": "user",
-            "content": prompt,
-            "timestamp": datetime.now(UTC).isoformat(),
-        },
-        {
-            "role": "assistant",
-            "model_id": left_model.id,
-            "position": "left",
-            "content": left_response.content,
-            "latency_ms": left_response.latency_ms,
-            "timestamp": datetime.now(UTC).isoformat(),
-        },
-        {
-            "role": "assistant",
-            "model_id": right_model.id,
-            "position": "right",
-            "content": right_response.content,
-            "latency_ms": right_response.latency_ms,
-            "timestamp": datetime.now(UTC).isoformat(),
-        },
-    ]
 
     battle = Battle(
         battle_id=battle_id,
         session_id=session_id,
         left_model_id=left_model.id,
         right_model_id=right_model.id,
-        conversation=conversation,
+        seq_in_session=battle_seq,
         status="ongoing",
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
     )
     battle = await battle_repo.create(battle)
 
-    # Commit both session update and battle creation
+    # 7. Calculate session_seq for new messages
+    # Count existing messages in the session
+    existing_message_count_result = await db.execute(
+        select(Message).filter(Message.session_id == session_id)
+    )
+    existing_messages = existing_message_count_result.scalars().all()
+    session_seq_start = len(existing_messages)
+
+    # 8. Create Turn record
+    turn_id = f"turn_{uuid.uuid4().hex[:12]}"
+    turn = Turn(
+        turn_id=turn_id,
+        session_id=session_id,
+        battle_id=battle_id,
+        battle_seq_in_session=battle_seq,
+        seq=0,  # First turn in this battle
+        user_input=prompt,
+        created_at=datetime.now(UTC),
+    )
+    db.add(turn)
+
+    # 9. Create Message records
+    left_message = Message(
+        message_id=f"msg_{uuid.uuid4().hex[:12]}",
+        turn_id=turn_id,
+        session_id=session_id,
+        battle_id=battle_id,
+        battle_seq_in_session=battle_seq,
+        turn_seq=0,
+        seq_in_turn=0,  # Left = 0
+        session_seq=session_seq_start,
+        side="left",
+        content=left_response.content,
+        created_at=datetime.now(UTC),
+    )
+    db.add(left_message)
+
+    right_message = Message(
+        message_id=f"msg_{uuid.uuid4().hex[:12]}",
+        turn_id=turn_id,
+        session_id=session_id,
+        battle_id=battle_id,
+        battle_seq_in_session=battle_seq,
+        turn_seq=0,
+        seq_in_turn=1,  # Right = 1
+        session_seq=session_seq_start + 1,
+        side="right",
+        content=right_response.content,
+        created_at=datetime.now(UTC),
+    )
+    db.add(right_message)
+
+    # Commit session update, battle, turn, and messages
     await db.commit()
 
-    logger.info(f"Battle created: {battle_id}")
+    logger.info(f"Battle created: {battle_id}, Turn: {turn_id}, Messages: left+right")
 
-    # 6. Return anonymous responses
+    # 10. Return anonymous responses
     return {
         "session_id": session_id,
         "battle_id": battle_id,
@@ -352,45 +486,36 @@ async def add_follow_up_message(
     if battle.status != "ongoing":
         raise ValueError(f"Cannot add message to battle with status: {battle.status}")
 
-    logger.info(f"Battle found: {battle_id}, current messages: {len(battle.conversation)}")
+    # Count turns in this battle
+    turn_count_result = await db.execute(
+        select(Turn).filter(Turn.battle_id == battle_id)
+    )
+    turn_count = len(turn_count_result.scalars().all())
+
+    logger.info(f"Battle found: {battle_id}, current turns: {turn_count}")
 
     # 3. Get model configs
     model_service = get_model_service()
     left_model = model_service.get_model(battle.left_model_id)
     right_model = model_service.get_model(battle.right_model_id)
 
-    # 4. Build conversation history for each model (OpenAI chat format)
-    # Extract user messages and assistant messages for each position
-    left_history = []
-    right_history = []
-
-    for msg in battle.conversation:
-        if msg["role"] == "user":
-            # User messages go to both models
-            left_history.append({"role": "user", "content": msg["content"]})
-            right_history.append({"role": "user", "content": msg["content"]})
-        elif msg["role"] == "assistant":
-            # Assistant messages go to their respective position
-            if msg["position"] == "left":
-                left_history.append({"role": "assistant", "content": msg["content"]})
-            elif msg["position"] == "right":
-                right_history.append({"role": "assistant", "content": msg["content"]})
+    # 4. Build session-wide conversation history (multi-assistant approach)
+    session_history = await get_session_messages(db, battle.session_id)
 
     # Add new user message to history
-    left_history.append({"role": "user", "content": prompt})
-    right_history.append({"role": "user", "content": prompt})
+    messages = session_history + [{"role": "user", "content": prompt}]
 
     logger.info(
-        f"Built conversation history: left={len(left_history)} messages, right={len(right_history)} messages"
+        f"Built session-wide conversation history: {len(messages)} messages total"
     )
 
-    # 5. Call LLMs with full history
+    # 5. Call LLMs with session-wide history (both models get same history)
     llm_client = get_llm_client()
 
     try:
-        # Parallel API calls with full history
-        left_task = llm_client.chat_completion(left_model, left_history)
-        right_task = llm_client.chat_completion(right_model, right_history)
+        # Parallel API calls with session-wide history
+        left_task = llm_client.chat_completion(left_model, messages)
+        right_task = llm_client.chat_completion(right_model, messages)
 
         left_response, right_response = await asyncio.gather(left_task, right_task)
 
@@ -405,41 +530,66 @@ async def add_follow_up_message(
         await db.rollback()
         raise Exception(f"Failed to get LLM responses: {str(e)}")
 
-    # 6. Append new messages to conversation (JSONB)
-    new_messages = [
-        {
-            "role": "user",
-            "content": prompt,
-            "timestamp": datetime.now(UTC).isoformat(),
-        },
-        {
-            "role": "assistant",
-            "model_id": left_model.id,
-            "position": "left",
-            "content": left_response.content,
-            "latency_ms": left_response.latency_ms,
-            "timestamp": datetime.now(UTC).isoformat(),
-        },
-        {
-            "role": "assistant",
-            "model_id": right_model.id,
-            "position": "right",
-            "content": right_response.content,
-            "latency_ms": right_response.latency_ms,
-            "timestamp": datetime.now(UTC).isoformat(),
-        },
-    ]
+    # 6. Calculate session_seq for new messages
+    existing_message_count_result = await db.execute(
+        select(Message).filter(Message.session_id == battle.session_id)
+    )
+    existing_messages = existing_message_count_result.scalars().all()
+    session_seq_start = len(existing_messages)
 
-    # Append to existing conversation
-    battle.conversation = battle.conversation + new_messages
+    # 7. Create Turn record
+    turn_id = f"turn_{uuid.uuid4().hex[:12]}"
+    turn = Turn(
+        turn_id=turn_id,
+        session_id=battle.session_id,
+        battle_id=battle_id,
+        battle_seq_in_session=battle.seq_in_session,
+        seq=turn_count,  # Next turn in this battle
+        user_input=prompt,
+        created_at=datetime.now(UTC),
+    )
+    db.add(turn)
+
+    # 8. Create Message records
+    left_message = Message(
+        message_id=f"msg_{uuid.uuid4().hex[:12]}",
+        turn_id=turn_id,
+        session_id=battle.session_id,
+        battle_id=battle_id,
+        battle_seq_in_session=battle.seq_in_session,
+        turn_seq=turn_count,
+        seq_in_turn=0,  # Left = 0
+        session_seq=session_seq_start,
+        side="left",
+        content=left_response.content,
+        created_at=datetime.now(UTC),
+    )
+    db.add(left_message)
+
+    right_message = Message(
+        message_id=f"msg_{uuid.uuid4().hex[:12]}",
+        turn_id=turn_id,
+        session_id=battle.session_id,
+        battle_id=battle_id,
+        battle_seq_in_session=battle.seq_in_session,
+        turn_seq=turn_count,
+        seq_in_turn=1,  # Right = 1
+        session_seq=session_seq_start + 1,
+        side="right",
+        content=right_response.content,
+        created_at=datetime.now(UTC),
+    )
+    db.add(right_message)
+
+    # 9. Update battle updated_at
     battle.updated_at = datetime.now(UTC)
-
-    # 7. Update battle
     battle = await battle_repo.update(battle)
+
+    # Commit turn and messages
     await db.commit()
 
-    # Calculate message count (number of user messages)
-    user_message_count = sum(1 for msg in battle.conversation if msg["role"] == "user")
+    # Calculate message count (number of turns + 1 for new turn)
+    user_message_count = turn_count + 1
 
     logger.info(
         f"Follow-up message added to battle: {battle_id}, total user messages: {user_message_count}"
@@ -619,7 +769,7 @@ async def get_battles_by_session(
 
     # Initialize repositories
     session_repo = SessionRepository(db)
-    battle_repo = BattleRepository(db)
+    BattleRepository(db)
     vote_repo = VoteRepository(db)
 
     # Verify session exists
@@ -627,10 +777,59 @@ async def get_battles_by_session(
     if not session:
         raise ValueError(f"Session not found: {session_id}")
 
-    # Get all battles for session
-    battles = await battle_repo.get_by_session_id(session_id)
+    # Fetch all battles, turns and messages for the session (efficient: 3 queries)
+    battles_result = await db.execute(
+        select(Battle)
+        .filter(Battle.session_id == session_id)
+        .order_by(Battle.seq_in_session)
+    )
+    battles = battles_result.scalars().all()
 
     logger.info(f"Found {len(battles)} battles for session {session_id}")
+
+    turns_result = await db.execute(
+        select(Turn).filter(Turn.session_id == session_id).order_by(Turn.seq)
+    )
+    turns = turns_result.scalars().all()
+
+    messages_result = await db.execute(
+        select(Message)
+        .filter(Message.session_id == session_id)
+        .order_by(
+            Message.battle_seq_in_session,
+            Message.turn_seq,
+            Message.seq_in_turn,
+        )
+    )
+    messages = messages_result.scalars().all()
+
+    # Group conversations by battle_id
+    battle_conversations: Dict[str, List[Dict]] = {}
+
+    for turn in turns:
+        if turn.battle_id not in battle_conversations:
+            battle_conversations[turn.battle_id] = []
+
+        # Add user message
+        battle_conversations[turn.battle_id].append(
+            {
+                "role": "user",
+                "content": turn.user_input,
+                "timestamp": turn.created_at.isoformat(),
+            }
+        )
+
+        # Add assistant messages for this turn
+        turn_messages = [m for m in messages if m.turn_id == turn.turn_id]
+        for msg in sorted(turn_messages, key=lambda m: m.seq_in_turn):
+            battle_conversations[turn.battle_id].append(
+                {
+                    "role": "assistant",
+                    "content": msg.content,
+                    "position": msg.side,
+                    "timestamp": msg.created_at.isoformat(),
+                }
+            )
 
     # Convert to response format with vote information
     battle_items = []
@@ -639,7 +838,7 @@ async def get_battles_by_session(
             "battle_id": battle.battle_id,
             "left_model_id": battle.left_model_id,
             "right_model_id": battle.right_model_id,
-            "conversation": battle.conversation,
+            "conversation": battle_conversations.get(battle.battle_id, []),
             "status": battle.status,
             "vote": None,
             "created_at": battle.created_at,

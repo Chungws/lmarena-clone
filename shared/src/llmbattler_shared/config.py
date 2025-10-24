@@ -76,3 +76,13 @@ class Settings(BaseSettings):
 
 # Singleton instance
 settings = Settings()
+
+
+# Multi-assistant system prompt
+# Used when assembling session-wide conversation history for LLM requests
+MULTI_ASSISTANT_SYSTEM_PROMPT = (
+    "You are participating in a multi-model comparison system. "
+    "Multiple AI assistants are responding to the same conversation. "
+    "Each 'assistant' message may be from a different AI model. "
+    "Continue the conversation naturally without mentioning this setup to the user."
+)
