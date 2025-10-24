@@ -497,6 +497,7 @@ def test_get_session_battles_with_votes(client: TestClient):
     assert "conversation" in second_battle
     assert len(second_battle["conversation"]) > 0
 
+
 def test_get_session_battles_session_not_found(client: TestClient):
     """
     Test GET /api/sessions/{session_id}/battles with non-existent session

@@ -69,9 +69,7 @@ async def get_session_messages(
     all_messages = result.scalars().all()
 
     # Fetch all turns for the session to get user inputs
-    result = await db.execute(
-        select(Turn).filter(Turn.session_id == session_id).order_by(Turn.seq)
-    )
+    result = await db.execute(select(Turn).filter(Turn.session_id == session_id).order_by(Turn.seq))
     turns = result.scalars().all()
 
     # Create turn_id -> user_input mapping
@@ -487,9 +485,7 @@ async def add_follow_up_message(
         raise ValueError(f"Cannot add message to battle with status: {battle.status}")
 
     # Count turns in this battle
-    turn_count_result = await db.execute(
-        select(Turn).filter(Turn.battle_id == battle_id)
-    )
+    turn_count_result = await db.execute(select(Turn).filter(Turn.battle_id == battle_id))
     turn_count = len(turn_count_result.scalars().all())
 
     logger.info(f"Battle found: {battle_id}, current turns: {turn_count}")
@@ -505,9 +501,7 @@ async def add_follow_up_message(
     # Add new user message to history
     messages = session_history + [{"role": "user", "content": prompt}]
 
-    logger.info(
-        f"Built session-wide conversation history: {len(messages)} messages total"
-    )
+    logger.info(f"Built session-wide conversation history: {len(messages)} messages total")
 
     # 5. Call LLMs with session-wide history (both models get same history)
     llm_client = get_llm_client()
@@ -779,9 +773,7 @@ async def get_battles_by_session(
 
     # Fetch all battles, turns and messages for the session (efficient: 3 queries)
     battles_result = await db.execute(
-        select(Battle)
-        .filter(Battle.session_id == session_id)
-        .order_by(Battle.seq_in_session)
+        select(Battle).filter(Battle.session_id == session_id).order_by(Battle.seq_in_session)
     )
     battles = battles_result.scalars().all()
 

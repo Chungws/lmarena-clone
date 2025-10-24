@@ -38,9 +38,7 @@ def test_add_follow_up_message_success(client: TestClient):
     battle_id = session_data["battle_id"]
 
     # Act: Add follow-up message (uses MockLLMClient automatically from conftest)
-    response = client.post(
-        f"/api/battles/{battle_id}/messages", json={"prompt": follow_up_prompt}
-    )
+    response = client.post(f"/api/battles/{battle_id}/messages", json={"prompt": follow_up_prompt})
 
     # Assert
     assert response.status_code == 201
@@ -69,7 +67,6 @@ def test_add_follow_up_message_success(client: TestClient):
     assert right_response["position"] == "right"
     assert "text" in right_response
     assert right_response["latency_ms"] > 0
-
 
 
 def test_add_follow_up_message_battle_not_found(client: TestClient):

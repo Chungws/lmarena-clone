@@ -3,7 +3,7 @@ SQLModel models for PostgreSQL (shared between backend and worker)
 """
 
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from sqlalchemy import DateTime, JSON
 from sqlmodel import Column, Field, SQLModel
@@ -104,9 +104,7 @@ class Message(SQLModel, table=True):
 
     side: str = Field(max_length=10)
     content: Optional[str] = None
-    content_json: Optional[Dict[str, Any]] = Field(
-        default=None, sa_column=Column(JSON)
-    )
+    content_json: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
     token_count: Optional[int] = None
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
