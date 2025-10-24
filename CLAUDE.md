@@ -51,7 +51,6 @@ make test  # Run all tests
 cd backend
 uvx ruff check
 uvx ruff format --check
-uvx isort --check --profile black .
 uv run pytest -s
 ```
 
@@ -67,7 +66,6 @@ npm run lint
 cd worker
 uvx ruff check
 uvx ruff format --check
-uvx isort --check --profile black .
 uv run pytest -s
 ```
 
