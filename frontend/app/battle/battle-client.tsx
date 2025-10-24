@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import * as service from "./service";
 import type { VoteOption } from "./_types";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export default function BattleClient() {
   const { battles, loading: sessionLoading, refetch: refetchBattles } = useSessionDetail(sessionIdFromUrl);
 
   const [promptInput, setPromptInput] = useState("");
+  const [loadingPrompt, setLoadingPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hoveredVote, setHoveredVote] = useState<VoteOption | null>(null);
@@ -47,6 +49,13 @@ export default function BattleClient() {
     scrollToBottom();
   }, [battles.length]);
 
+  // Auto-scroll when loading starts
+  useEffect(() => {
+    if (isLoading) {
+      scrollToBottom();
+    }
+  }, [isLoading]);
+
   // Sort battles by created_at (oldest first, newest last)
   const sortedBattles = [...battles].sort((a, b) => {
     const timeA = new Date(a.created_at || 0).getTime();
@@ -64,6 +73,7 @@ export default function BattleClient() {
   const handleStartSession = async () => {
     if (!promptInput.trim()) return;
 
+    setLoadingPrompt(promptInput);
     setIsLoading(true);
     setError(null);
 
@@ -76,6 +86,7 @@ export default function BattleClient() {
       setError(err instanceof Error ? err.message : "Failed to create session");
     } finally {
       setIsLoading(false);
+      setLoadingPrompt("");
     }
   };
 
@@ -85,6 +96,7 @@ export default function BattleClient() {
   const handleSendMessage = async () => {
     if (!promptInput.trim() || !sessionIdFromUrl) return;
 
+    setLoadingPrompt(promptInput);
     setIsLoading(true);
     setError(null);
 
@@ -108,6 +120,7 @@ export default function BattleClient() {
       setError(err instanceof Error ? err.message : "Failed to send message");
     } finally {
       setIsLoading(false);
+      setLoadingPrompt("");
     }
   };
 
@@ -175,7 +188,7 @@ export default function BattleClient() {
       <div className="flex-1 overflow-auto px-4 md:px-8 pb-6">
         <div className="max-w-7xl mx-auto space-y-6">
           {/* No Session - Initial Prompt */}
-          {!sessionIdFromUrl && (
+          {!sessionIdFromUrl && !isLoading && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base font-semibold">
@@ -200,6 +213,42 @@ export default function BattleClient() {
                 </Button>
               </CardContent>
             </Card>
+          )}
+
+          {/* Loading Skeleton - Initial Session Creation */}
+          {!sessionIdFromUrl && isLoading && loadingPrompt && (
+            <div className="space-y-4">
+              {/* User Message - Show actual message */}
+              <div className="flex justify-end">
+                <div className="max-w-[80%] bg-primary text-primary-foreground rounded-lg px-4 py-3">
+                  <div className="text-sm">{loadingPrompt}</div>
+                </div>
+              </div>
+
+              {/* AI Response Skeletons - Side by side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="pt-4 space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-4 space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           )}
 
           {/* Active Session - Continuous Chat Stream */}
@@ -416,6 +465,43 @@ export default function BattleClient() {
                   );
                 })
               )}
+
+              {/* Loading Skeleton - Show while AI is generating responses */}
+              {isLoading && sessionIdFromUrl && loadingPrompt && (
+                <div className="space-y-4">
+                  {/* User Message - Show actual message */}
+                  <div className="flex justify-end">
+                    <div className="max-w-[80%] bg-primary text-primary-foreground rounded-lg px-4 py-3">
+                      <div className="text-sm">{loadingPrompt}</div>
+                    </div>
+                  </div>
+
+                  {/* AI Response Skeletons - Side by side */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card>
+                      <CardContent className="pt-4 space-y-3">
+                        <Skeleton className="h-4 w-24" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-3/4" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="pt-4 space-y-3">
+                        <Skeleton className="h-4 w-24" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-3/4" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+
               {/* Auto-scroll anchor */}
               <div ref={chatEndRef} />
             </div>

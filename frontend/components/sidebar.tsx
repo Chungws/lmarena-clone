@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MessageSquarePlus, Trophy, ChevronLeft, ChevronRight, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SessionList } from "@/components/sidebar/session-list";
 import { cn } from "@/lib/utils";
@@ -83,7 +84,18 @@ export function Sidebar({ className }: SidebarProps) {
             <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
               Recent
             </div>
-            <SessionList />
+            <Suspense fallback={
+              <div className="space-y-2 px-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                ))}
+              </div>
+            }>
+              <SessionList />
+            </Suspense>
           </div>
         )}
       </nav>
