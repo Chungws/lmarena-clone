@@ -12,9 +12,9 @@ Compare and evaluate LLM responses through blind side-by-side testing. Users sub
 |----------|---------|
 | **Project Name** | llmbattler |
 | **Repository** | [Chungws/lmarena-clone](https://github.com/Chungws/lmarena-clone) |
-| **Tech Stack** | FastAPI, Next.js 15, PostgreSQL, MongoDB, Python Worker |
+| **Tech Stack** | FastAPI, Next.js 15, PostgreSQL, Python Worker |
 | **Development Start** | 2025-01-20 |
-| **Status** | Initial Setup |
+| **Status** | MVP Complete (Phase 3) - Production Ready |
 
 ---
 
@@ -394,4 +394,4 @@ Read these documents before creating PR:
 - Curious about **current development status**? → [00_ROADMAP.md](./00_ROADMAP.md)
 - Want to know **how to implement a feature**? → [CONVENTIONS/](./CONVENTIONS/)
 
-**Last Updated:** 2025-01-20
+**Last Updated:** 2025-10-25

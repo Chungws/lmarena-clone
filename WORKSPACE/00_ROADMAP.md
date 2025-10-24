@@ -31,7 +31,6 @@ llmbattler is an **AI Language Model Battle Arena** that enables unbiased evalua
 **Backend (API Server):**
 - FastAPI (async ASGI)
 - SQLModel + SQLAlchemy 2.0 (PostgreSQL ORM)
-- Motor or PyMongo (MongoDB driver)
 - Alembic (migrations)
 - pytest (TDD)
 - httpx (LLM API client)
